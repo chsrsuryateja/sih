@@ -26,18 +26,21 @@ class Page extends React.Component {
       .then(response => {
         this.setState({
           drives: response.data[0],
-          studentDetails : response.data[1],
-          rounds: response.data[2]
+          rounds: response.data[1]
         });
-
-        for (let i = 0; i < this.state.studentDetails.length; i++) {
-          this.state.detailEdit.push({
-            editStatus: false,
-            initial: this.state.studentDetails[i].roundName
-          });
-        }
       })
       .catch(err => console.log(err));
+  };
+
+  getStudentDetails = () => {
+    tnpbase
+      .get("/drives/performance/studentDetails")
+      .then(response => {
+        this.setState({ studentDetails: response.data });
+      })
+      .catch(err => {
+        console.log(err);
+      });
   };
 
   enableTable = () => {
@@ -46,11 +49,19 @@ class Page extends React.Component {
       .post("/drives/performance/driveDetails", data)
       .then(() => {
         console.log("Fetching Data");
+        this.getStudentDetails();
+
+        for (let i = 0; i < this.state.studentDetails.length; i++) {
+          this.state.detailEdit.push({
+            editStatus: false,
+            initial: this.state.studentDetails[i].roundName
+          });
+        }
       })
       .catch(err => {
         console.log(err);
       });
-      
+
     console.log(data);
   };
 
@@ -78,7 +89,8 @@ class Page extends React.Component {
         <button
           className="ui  button"
           onClick={() => {
-            this.state.detailEdit[i].editStatus = !this.state.detailEdit[i].editStatus;
+            this.state.detailEdit[i].editStatus = !this.state.detailEdit[i]
+              .editStatus;
             console.log(this.state.detailEdit);
           }}
         >
@@ -91,7 +103,8 @@ class Page extends React.Component {
           className="ui  secondary button"
           style={{ margin: "5px" }}
           onClick={() => {
-            this.state.detailEdit[i].editStatus = !this.state.detailEdit[i].editStatus;
+            this.state.detailEdit[i].editStatus = !this.state.detailEdit[i]
+              .editStatus;
             // console.log(this.state.detailEdit[i].editStatus)
           }}
         >
@@ -129,7 +142,6 @@ class Page extends React.Component {
       );
     });
   };
-
 
   render() {
     let driveMenu = this.state.drives.map(drives => (
