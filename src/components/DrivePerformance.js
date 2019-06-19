@@ -1,149 +1,208 @@
 import React from "react";
+import { connect } from "react-redux";
+import { FetchPerfData } from "../actions";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import tnpbase from "../api/tnpbase";
 
-class DrivePerformance extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      showTable: false,
-      edit: false
-    };
-    this.rollNumbers = ["17A31A0534", "17A31A0545", "17A31A0546", "17A31A0551"];
-    this.rounds = ["Written", "Technical", "G.D", "H.R"];
-    this.drive = ["T.C.S", "Cap Gemini", "Cognizant", "Open Text"];
-    
-  }
-
-  enableTable = () => {
-    this.setState(prevState => ({
-      showTable: !prevState.showTable
-    }));
-    console.log(this.state.showTable + ":" + this.state.edit);
+class Page extends React.Component {
+  state = {
+    showTable: false,
+    driveName: "",
+    drives: [],
+    rounds: [],
+    date: null,
+    studentDetails: [],
+    detailEdit: []
   };
 
-  buttonHandle = () =>
-    this.state.edit ? (
-      <div className="ui right floated basic icon buttons">
+  componentDidMount = () => {
+    this.getData();
+  };
+
+  getData = () => {
+    tnpbase
+      .get("/drive/performance")
+      .then(response => {
+        this.setState({
+          drives: response.data[0],
+          rounds: response.data[1]
+        });
+      })
+      .catch(err => console.log(err));
+  };
+
+  getStudentDetails = () => {
+    tnpbase
+      .get("/drives/performance/studentDetails")
+      .then(response => {
+        this.setState({ studentDetails: response.data });
+      })
+      .catch(err => {
+        console.log(err);
+      });
+  };
+
+  enableTable = () => {
+    let data = { driveName: this.state.driveName, date: this.state.date };
+    tnpbase
+      .post("/drives/performance/driveDetails", data)
+      .then(() => {
+        console.log("Fetching Data");
+        this.getStudentDetails();
+
+        for (let i = 0; i < this.state.studentDetails.length; i++) {
+          this.state.detailEdit.push({
+            editStatus: false,
+            initial: this.state.studentDetails[i].roundName
+          });
+        }
+      })
+      .catch(err => {
+        console.log(err);
+      });
+
+    console.log(data);
+  };
+
+  buttonHandle = i =>
+    this.state.detailEdit[i].editStatus ? (
+      <div className="ui basic icon buttons">
         <button
           className="ui  button"
           style={{ margin: "5px" }}
-          onClick={() => this.setState({ edit: !this.state.edit })}
+          onClick={() => {
+            let data = {
+              HTNO: this.state.studentDetails[i].HTNO,
+              roundName: this.state.studentDetails[i].roundName
+            };
+            tnpbase.post("/drives/performance/editDetail", data);
+            console.log(this.state.detailEdit);
+          }}
         >
           <i className="check icon" />
         </button>
         <button
           className="ui  button"
           onClick={() => {
-            this.setState({ edit: !this.state.edit });
-            console.log(this.state.edit);
+            this.state.detailEdit[i].editStatus = !this.state.detailEdit[i].editStatus;
+            console.log(this.state.detailEdit);
           }}
         >
           <i className="x icon" />
         </button>
       </div>
     ) : (
-        <div>
-          <button
-            className="ui right floated secondary button"
-            style={{ margin: "5px" }}
-            onClick={() => this.setState({ edit: !this.state.edit })}
-          >
-            <i className="pencil alternate icon" />
-            Edit
-    </button>
-        </div>
-      );
+      <div>
+        <button
+          className="ui  secondary button"
+          style={{ margin: "5px" }}
+          onClick={() => {
+            this.state.detailEdit[i].editStatus = !this.state.detailEdit[i].editStatus;
+            // console.log(this.state.detailEdit[i].editStatus)
+          }}
+        >
+          <i className="pencil alternate icon" />
+          Edit
+        </button>
+      </div>
+    );
 
-  roundDetail = () => {
-    return this.rollNumbers.map((number) => {
+  tableData = () => {
+    return this.state.studentDetails.map((number, i) => {
       return (
-        <tr key={number}>
-          <td>{number}</td>
-          <td>{this.rounds[3]}</td>
+        <tr key={i}>
+          <td>{number.HTNO}</td>
           <td>
-            <button
-              className="ui basic icon button"
-              onClick={console.log("Deleted")}
-            >
-              <i className="trash icon" />
-            </button>
+            {this.state.detailEdit[i].editStatus ? (
+              <select
+                className="ui search dropdown"
+                defaultValue={number.roundName}
+                onChange={e => {
+                  console.log("Selected val, directly" + e.target.value);
+                  number.roundName = e.target.value;
+                }}
+              >
+                {this.state.rounds.map(round => (
+                  <option value={round}>{round}</option>
+                ))}
+              </select>
+            ) : (
+              number.roundName
+            )}
           </td>
+          <td>{this.buttonHandle(i)}</td>
         </tr>
-      )
+      );
     });
-  }
-
-  editRoundDetail = () => {
-    return this.rollNumbers.map((number) => {
-      return (
-        <tr key={number}>
-          <td>{number}</td>
-          <td>
-            <select className="ui search dropdown">
-              {this.rounds.map(round => <option>{round}</option>)}
-            </select>
-          </td>
-          <td>
-            <button
-              className="ui basic icon button"
-              onClick={console.log("Deleted")}
-            >
-              <i className="trash icon" />
-            </button>
-          </td>
-        </tr>
-      )
-    })
-
-  }
-
-  tableDataFormat = () =>
-    this.state.edit ? (
-      this.editRoundDetail()
-    ) : (
-        this.roundDetail()
-      );
-
-
-
-  tableDetails = () => this.state.showTable ? (
-    <div className="ui container">
-      {this.buttonHandle()}
-      <table className="ui blue table">
-        <thead>
-          <tr>
-            <th>Roll No.</th>
-            <th>Round Name</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {this.tableDataFormat()}
-        </tbody>
-      </table>
-    </div>
-  ) : null;
+  };
 
   render() {
-    let numbers = this.rollNumbers;
-    let drives = this.drive;
-    let rounds = this.rounds;
-    let driveMenu = drives.map(drives => <option>{drives}</option>);
-
-    let roundMenu = rounds.map(round => <option>{round}</option>);
-
-    console.log("Initially:" + this.state.showTable);
-
+    let driveMenu = this.state.drives.map(drives => (
+      <option value={drives}>{drives}</option>
+    ));
     return (
       <div>
-        <h2>Drive Performance</h2>
-        <select className="ui search dropdown">{driveMenu}</select>
-        <button className="ui button">
-          <i className="check icon" onClick={this.enableTable} />
-        </button>
-        {this.tableDetails()}
+        <h2>testing</h2>
+        <div className="ui input">
+          <form className="ui form">
+            <label>Select Drive: </label>
+            <select
+              className="ui search dropdown"
+              value={this.state.driveName}
+              onChange={e => {
+                this.setState({ driveName: e.target.value });
+              }}
+            >
+              <option value="">Select Drive</option>
+              {driveMenu}
+            </select>
+            <br />
+            <label>Select Date: </label>
+            <br />
+            <DatePicker
+              dateFormat="dd/MM/yyyy"
+              selected={this.state.date}
+              onChange={dateDetail => {
+                console.log(this.state.date);
+                this.setState({ date: dateDetail })}}
+            />
+          </form>
+          <br />
+        </div>
+        <div>
+          <br />
+          <button className="ui button">
+            <i className="check icon" onClick={this.enableTable} />
+          </button>
+        </div>
+        <div>
+          <br />
+          <div className="ui container">
+            <table className="ui blue table">
+              <thead>
+                <tr>
+                  <th>Roll No.</th>
+                  <th>Round Name</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>{this.tableData()}</tbody>
+            </table>
+          </div>
+        </div>
       </div>
     );
   }
 }
 
-export default DrivePerformance;
+const mapStateToProps = state => {
+  return {
+    perfData: state.perfData
+  };
+};
+
+export default connect(
+  mapStateToProps,
+  { FetchPerfData }
+)(Page);

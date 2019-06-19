@@ -85,8 +85,7 @@ class Page extends React.Component {
         <button
           className="ui  button"
           onClick={() => {
-            this.state.detailEdit[i].editStatus = !this.state.detailEdit[i]
-              .editStatus;
+            this.state.detailEdit[i].editStatus = !this.state.detailEdit[i].editStatus;
             console.log(this.state.detailEdit);
           }}
         >
@@ -99,8 +98,7 @@ class Page extends React.Component {
           className="ui  secondary button"
           style={{ margin: "5px" }}
           onClick={() => {
-            this.state.detailEdit[i].editStatus = !this.state.detailEdit[i]
-              .editStatus;
+            this.state.detailEdit[i].editStatus = !this.state.detailEdit[i].editStatus;
             // console.log(this.state.detailEdit[i].editStatus)
           }}
         >
@@ -165,7 +163,9 @@ class Page extends React.Component {
             <DatePicker
               dateFormat="dd/MM/yyyy"
               selected={this.state.date}
-              onChange={dateDetail => this.setState({ date: dateDetail })}
+              onChange={dateDetail => {
+                console.log(this.state.date);
+                this.setState({ date: dateDetail })}}
             />
           </form>
           <br />
