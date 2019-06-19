@@ -72,10 +72,6 @@ class Page extends React.Component {
           className="ui  button"
           style={{ margin: "5px" }}
           onClick={() => {
-            let ups = this.state.detailEdit;
-            ups[i].editStatus = !ups[i].editStatus;
-            ups[i].initial = this.state.studentDetails[i].roundName;
-            this.setState({ detailEdit: ups });
             let data = {
               HTNO: this.state.studentDetails[i].HTNO,
               roundName: this.state.studentDetails[i].roundName
