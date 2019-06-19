@@ -44,7 +44,7 @@ class Page extends React.Component {
   };
 
   enableTable = () => {
-    let data = { driveName: this.state.driveName, date: this.state.date };
+    let data = { driveName: this.state.driveName, date: new Date(this.state.date).toDateString() };
     tnpbase
       .post("/drives/performance/driveDetails", data)
       .then(() => {
