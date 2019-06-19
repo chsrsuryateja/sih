@@ -143,7 +143,7 @@ class Page extends React.Component {
     ));
     return (
       <div>
-        <h2>testing</h2>
+        <h2>Drive Performance</h2>
         <div className="ui input">
           <form className="ui form">
             <label>Select Drive: </label>
