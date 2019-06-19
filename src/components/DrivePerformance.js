@@ -44,7 +44,7 @@ class Page extends React.Component {
   };
 
   enableTable = () => {
-    let data = { driveName: this.state.driveName, date: new Date(this.state.date).toDateString() };
+    let data = { driveName: this.state.driveName, date: new Date(this.state.date).toLocaleDateString('en-GB') };
     tnpbase
       .post("/drives/performance/driveDetails", data)
       .then(() => {
@@ -76,7 +76,8 @@ class Page extends React.Component {
               HTNO: this.state.studentDetails[i].HTNO,
               roundName: this.state.studentDetails[i].roundName
             };
-            tnpbase.post("/drives/performance/editDetail", data);
+            tnpbase
+            .post("/drives/performance/editDetail", data)
             console.log(this.state.detailEdit);
           }}
         >
