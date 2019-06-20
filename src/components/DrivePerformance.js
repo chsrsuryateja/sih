@@ -32,24 +32,13 @@ class Page extends React.Component {
       .catch(err => console.log(err));
   };
 
-  getStudentDetails = () => {
-    tnpbase
-      .get("/drives/performance/studentDetails")
-      .then(response => {
-        this.setState({ studentDetails: response.data });
-      })
-      .catch(err => {
-        console.log(err);
-      });
-  };
-
   enableTable = () => {
-    let data = { driveName: this.state.driveName, date: new Date(this.state.date).toLocaleDateString('en-GB') };
+    let data = { driveName: this.state.driveName, date: new Date(this.state.date).toLocaleDateString("en-GB") };
     tnpbase
       .post("/drives/performance/driveDetails", data)
-      .then(() => {
+      .then((response) => {
         console.log("Fetching Data");
-        this.getStudentDetails();
+        this.setState({ studentDetails: response.data });
 
         for (let i = 0; i < this.state.studentDetails.length; i++) {
           this.state.detailEdit.push({
