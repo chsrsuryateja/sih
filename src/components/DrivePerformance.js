@@ -43,7 +43,7 @@ class Page extends React.Component {
         for (let i = 0; i < this.state.studentDetails.length; i++) {
           this.state.detailEdit.push({
             editStatus: false,
-            initial: this.state.studentDetails[i].roundName
+            initial: this.state.studentDetails[i][1]
           });
         }
       })
@@ -62,8 +62,8 @@ class Page extends React.Component {
           style={{ margin: "5px" }}
           onClick={() => {
             let data = {
-              HTNO: this.state.studentDetails[i].HTNO,
-              roundName: this.state.studentDetails[i].roundName
+              HTNO: this.state.studentDetails[i][0],
+              roundName: this.state.studentDetails[i][1]
             };
             tnpbase
             .post("/drives/performance/editDetail", data)
@@ -102,12 +102,12 @@ class Page extends React.Component {
     return this.state.studentDetails.map((number, i) => {
       return (
         <tr key={i}>
-          <td>{number.HTNO}</td>
+          <td>{number[0]}</td>
           <td>
             {this.state.detailEdit[i].editStatus ? (
               <select
                 className="ui search dropdown"
-                defaultValue={number.roundName}
+                defaultValue={number[1]}
                 onChange={e => {
                   console.log("Selected val, directly" + e.target.value);
                   number.roundName = e.target.value;
@@ -118,7 +118,7 @@ class Page extends React.Component {
                 ))}
               </select>
             ) : (
-              number.roundName
+              number[1]
             )}
           </td>
           <td>{this.buttonHandle(i)}</td>
