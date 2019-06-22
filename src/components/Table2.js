@@ -32,31 +32,20 @@ class Page extends React.Component {
       .catch(err => console.log(err));
   };
 
-  getStudentDetails = () => {
-    tnpbase
-      .get("/drives/performance/studentDetails")
-      .then(response => {
-        this.setState({ studentDetails: response.data });
-      })
-      .catch(err => {
-        console.log(err);
-      });
-  };
-
   enableTable = () => {
-    let data = { driveName: this.state.driveName, date: new Date(this.state.date).toDateString() };
+    let data = { driveName: this.state.driveName, date: new Date(this.state.date).toLocaleDateString("en-GB") };
     tnpbase
       .post("/drives/performance/driveDetails", data)
-      .then(() => {
+      .then((response) => {
+        const status = [];
         console.log("Fetching Data");
-        this.getStudentDetails();
-
-        for (let i = 0; i < this.state.studentDetails.length; i++) {
-          this.state.detailEdit.push({
+        for (let i = 0; i < response.data.length; i++) {
+          status.push({
             editStatus: false,
-            initial: this.state.studentDetails[i].roundName
+            initial: response.data[i][1]
           });
         }
+        this.setState({detailEdit : status, studentDetails : response.data});
       })
       .catch(err => {
         console.log(err);
@@ -72,12 +61,21 @@ class Page extends React.Component {
           className="ui  button"
           style={{ margin: "5px" }}
           onClick={() => {
-            let data = {
-              HTNO: this.state.studentDetails[i].HTNO,
-              roundName: this.state.studentDetails[i].roundName
-            };
-            tnpbase.post("/drives/performance/editDetail", data);
-            console.log(this.state.detailEdit);
+            // let data = {
+            //   HTNO: this.state.studentDetails[i][0],
+            //   roundName: this.state.studentDetails[i][1]
+            // };
+            let data = [this.state.studentDetails[i][0],this.state.studentDetails[i][1]]
+            tnpbase
+            .post("/drives/performance/editDetail", data)
+            .then((response)=>{
+              let ups = this.state.detailEdit;
+              ups[i].editStatus = !ups[i].editStatus;
+              this.setState({detailEdit : ups , studentDetails : response.data});
+            })
+            .catch((err)=>{
+              console.log(err)
+            })
           }}
         >
           <i className="check icon" />
@@ -85,8 +83,10 @@ class Page extends React.Component {
         <button
           className="ui  button"
           onClick={() => {
-            this.state.detailEdit[i].editStatus = !this.state.detailEdit[i].editStatus;
-            console.log(this.state.detailEdit);
+            let ups = this.state.detailEdit;
+            ups[i].editStatus = !ups[i].editStatus;
+            this.state.studentDetails[i][1] = ups[i].initial;
+            this.setState({detailEdit : ups});
           }}
         >
           <i className="x icon" />
@@ -98,8 +98,9 @@ class Page extends React.Component {
           className="ui  secondary button"
           style={{ margin: "5px" }}
           onClick={() => {
-            this.state.detailEdit[i].editStatus = !this.state.detailEdit[i].editStatus;
-            // console.log(this.state.detailEdit[i].editStatus)
+            let ups = this.state.detailEdit;
+            ups[i].editStatus = !ups[i].editStatus;
+            this.setState({detailEdit : ups});
           }}
         >
           <i className="pencil alternate icon" />
@@ -109,18 +110,25 @@ class Page extends React.Component {
     );
 
   tableData = () => {
+    if(this.state.studentDetails.length === 0) {
+      return (
+        <tr>
+          <td colSpan={3}>It's Lonely Here</td>
+        </tr>
+      );
+    }
     return this.state.studentDetails.map((number, i) => {
       return (
         <tr key={i}>
-          <td>{number.HTNO}</td>
+          <td>{number[0]}</td>
           <td>
             {this.state.detailEdit[i].editStatus ? (
               <select
                 className="ui search dropdown"
-                defaultValue={number.roundName}
+                defaultValue={number[1]}
                 onChange={e => {
                   console.log("Selected val, directly" + e.target.value);
-                  number.roundName = e.target.value;
+                  number[1] = e.target.value;
                 }}
               >
                 {this.state.rounds.map(round => (
@@ -128,7 +136,7 @@ class Page extends React.Component {
                 ))}
               </select>
             ) : (
-              number.roundName
+              number[1]
             )}
           </td>
           <td>{this.buttonHandle(i)}</td>
@@ -143,7 +151,7 @@ class Page extends React.Component {
     ));
     return (
       <div>
-        <h2>testing</h2>
+        <h2>testing page</h2>
         <div className="ui input">
           <form className="ui form">
             <label>Select Drive: </label>

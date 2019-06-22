@@ -5,10 +5,10 @@ import "react-datepicker/dist/react-datepicker.css";
 
 class DriveAttendance extends React.Component {
   state = {
-    drives: [],
+    drives: ["hhaaah"],
     driveName: "",
     date: null,
-    values : ['P','A'],
+    values: ["P", "A"],
     attendanceDetails: [],
     studentDetails: []
   };
@@ -32,31 +32,22 @@ class DriveAttendance extends React.Component {
     console.log(data);
     tnpbase
       .post("/drives/attendance/getDriveDetails", data)
-      .then(() => {
-        console.log("Fetching");
-        this.getStudentDetails();
-      })
-      .catch(err => {
-        console.log(err);
-      });
-  };
-
-  getStudentDetails = () => {
-    tnpbase
-      .get("/drives/performance/getStudentDetails")
       .then(response => {
+        const status = [];
+        console.log("Fetching");
         this.setState({ studentDetails: response.data });
+        for (let i = 0; i < this.state.studentDetails.length; i++) {
+          status.push({
+            editStatus: false,
+            studentStatus: this.state.studentDetails[i].attendanceStatus
+          });
+        }
+        this.setState({attendanceDetails : status});
+        console.log(this.state.attendanceDetails);
       })
       .catch(err => {
         console.log(err);
       });
-
-    for (let i = 0; i < this.state.studentDetails.length; i++) {
-      this.state.attendanceDetails.push({
-        editStatus: false,
-        studentStatus: this.state.studentDetails[i].attendanceStatus
-      });
-    }
   };
 
   buttonHandle = i =>
@@ -68,11 +59,11 @@ class DriveAttendance extends React.Component {
           onClick={() => {
             let data = {
               HTNO: this.state.studentDetails[i].HTNO,
-              attendanceStatus : this.state.studentDetails[i].attendanceStatus
+              attendanceStatus: this.state.studentDetails[i].attendanceStatus
             };
-            tnpbase
-            .post("/drives/performance/editDetail", data)
-            this.state.attendanceDetails[i].editStatus = !this.state.attendanceDetails[i].editStatus;
+            tnpbase.post("/drives/performance/editDetail", data);
+            this.state.attendanceDetails[i].editStatus = !this.state
+              .attendanceDetails[i].editStatus;
             console.log(this.state.attendanceDetails);
           }}
         >
@@ -81,7 +72,8 @@ class DriveAttendance extends React.Component {
         <button
           className="ui  button"
           onClick={() => {
-            this.state.attendanceDetails[i].editStatus = !this.state.attendanceDetails[i].editStatus;
+            this.state.attendanceDetails[i].editStatus = !this.state
+              .attendanceDetails[i].editStatus;
             console.log(this.state.attendanceDetails);
           }}
         >
@@ -94,7 +86,8 @@ class DriveAttendance extends React.Component {
           className="ui  secondary button"
           style={{ margin: "5px" }}
           onClick={() => {
-            this.state.attendanceDetails[i].editStatus = !this.state.attendanceDetails[i].editStatus;
+            this.state.attendanceDetails[i].editStatus = !this.state
+              .attendanceDetails[i].editStatus;
             // console.log(this.state.attendanceDetails[i].editStatus)
           }}
         >
@@ -184,7 +177,9 @@ class DriveAttendance extends React.Component {
                   <th>Action</th>
                 </tr>
               </thead>
-              <tbody />
+              <tbody >
+                {/* {this.tableData()} */}
+              </tbody>
             </table>
           </div>
         </div>

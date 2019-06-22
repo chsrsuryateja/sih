@@ -1,57 +1,42 @@
 import React from "react";
-import { connect } from "react-redux";
-import { FetchPerfData } from "../actions";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import tnpbase from "../api/tnpbase";
 
 class Page extends React.Component {
   state = {
-    showTable: false,
     driveName: "",
     drives: [],
     rounds: [],
     date: null,
     studentDetails: [],
+    values: ["P", "A"],
     detailEdit: []
   };
 
-  componentDidMount = () => {
-    this.getData();
-  };
-
-  getData = () => {
+  getDrives = dateDetail => {
+    let data = { date: new Date(dateDetail).toLocaleDateString("en-GB") };
+    console.log(data);
     tnpbase
-      .get("/drive/performance")
+      .post("/drives/drivesList", data)
       .then(response => {
-        this.setState({
-          drives: response.data[0],
-          rounds: response.data[1]
-        });
-      })
-      .catch(err => console.log(err));
-  };
-
-  enableTable = () => {
-    let data = { driveName: this.state.driveName, date: new Date(this.state.date).toLocaleDateString("en-GB") };
-    tnpbase
-      .post("/drives/performance/driveDetails", data)
-      .then((response) => {
-        console.log("Fetching Data");
-        this.setState({ studentDetails: response.data });
-
-        for (let i = 0; i < this.state.studentDetails.length; i++) {
-          this.state.detailEdit.push({
-            editStatus: false,
-            initial: this.state.studentDetails[i][1]
-          });
-        }
+        this.setState({ drives: response.data });
       })
       .catch(err => {
         console.log(err);
       });
+  };
 
-    console.log(data);
+  getRoundsList = () => {
+    let data = { date: this.state.date, driveName: this.state.driveName };
+    tnpbase
+      .post("/drives/roundList", data)
+      .then(response => {
+        this.setState({ rounds: response.data });
+      })
+      .catch(err => {
+        console.log(err);
+      });
   };
 
   buttonHandle = i =>
@@ -62,12 +47,17 @@ class Page extends React.Component {
           style={{ margin: "5px" }}
           onClick={() => {
             let data = {
-              HTNO: this.state.studentDetails[i][0],
-              roundName: this.state.studentDetails[i][1]
+              HTNO: this.state.studentDetails[i].HTNO,
+              roundName: this.state.studentDetails[i].roundName,
+              attendanceStatus : this.state.studentDetails[i].attendanceStatus
             };
             tnpbase
-            .post("/drives/performance/editDetail", data)
-            console.log(this.state.detailEdit);
+             .post("/drives/performance/editDetail", data)
+             .then((result)=>{
+               let ups = this.state.detailEdit;
+               ups[i].editStatus = ! ups[i].editStatus;
+               this.setState({studentDetails : result.data , detailEdit : ups});
+             })
           }}
         >
           <i className="check icon" />
@@ -75,8 +65,11 @@ class Page extends React.Component {
         <button
           className="ui  button"
           onClick={() => {
-            this.state.detailEdit[i].editStatus = !this.state.detailEdit[i].editStatus;
-            console.log(this.state.detailEdit);
+            let ups = this.state.detailEdit;
+            ups[i].editStatus = !ups[i].editStatus;
+            this.state.studentDetails[i].roundName = ups[i].initialRoundName;
+            this.state.studentDetails[i].attendanceStatus = ups[i].initialAttendanceStatus;
+            this.setState({detailEdit : ups});
           }}
         >
           <i className="x icon" />
@@ -88,9 +81,11 @@ class Page extends React.Component {
           className="ui  secondary button"
           style={{ margin: "5px" }}
           onClick={() => {
-            this.state.detailEdit[i].editStatus = !this.state.detailEdit[i].editStatus;
-            // console.log(this.state.detailEdit[i].editStatus)
-          }}
+            let ups = this.state.detailEdit;
+            ups[i].editStatus = !ups[i].editStatus;
+            this.setState({detailEdit : ups});
+          }
+        }
         >
           <i className="pencil alternate icon" />
           Edit
@@ -99,15 +94,23 @@ class Page extends React.Component {
     );
 
   tableData = () => {
+    this.getRoundsList();
+    if(this.state.studentDetails.length === 0) {
+      return (
+        <tr>
+          <td colSpan={4}>It's Lonely Here</td>
+        </tr>
+      );
+    }
     return this.state.studentDetails.map((number, i) => {
       return (
         <tr key={i}>
-          <td>{number[0]}</td>
+          <td>{number.HTNO}</td>
           <td>
             {this.state.detailEdit[i].editStatus ? (
               <select
                 className="ui search dropdown"
-                defaultValue={number[1]}
+                defaultValue={number.roundName}
                 onChange={e => {
                   console.log("Selected val, directly" + e.target.value);
                   number.roundName = e.target.value;
@@ -118,7 +121,24 @@ class Page extends React.Component {
                 ))}
               </select>
             ) : (
-              number[1]
+              number.roundName
+            )}
+          </td>
+          <td>
+            {this.state.detailEdit[i].editStatus ? (
+              <select
+                className="ui search dropdown"
+                defaultValue={number.attendanceStatus}
+                onChange={e => {
+                  number.attendanceStatus = e.target.value;
+                }}
+              >
+                {this.state.values.map(status => (
+                  <option value={status}>{status}</option>
+                ))}
+              </select>
+            ) : (
+              number.roundName
             )}
           </td>
           <td>{this.buttonHandle(i)}</td>
@@ -127,43 +147,65 @@ class Page extends React.Component {
     });
   };
 
+  enableTable = () => {
+    let data = {
+      date: new Date(this.state.date).toLocaleDateString("en-GB"),
+      driveName: this.state.driveName
+    };
+    tnpbase
+      .post("/drives/performance/driveDetails", data)
+      .then(response => {
+        console.log("Fetching Data");
+        for (let i = 0; i < response.data.length; i++) {
+          this.state.detailEdit.push({
+            editStatus: false,
+            initialRoundName: response.data[i].roundName,
+            initialAttendanceStatus: response.data[i].attendanceStatus
+          });
+        }
+        this.setState({ studentDetails: response.data });
+      })
+      .catch(err => {
+        console.log(err);
+      });
+
+    console.log(data);
+  };
+
   render() {
     let driveMenu = this.state.drives.map(drives => (
       <option value={drives}>{drives}</option>
     ));
     return (
       <div>
-        <h2>Drive Performance</h2>
-        <div className="ui input">
-          <form className="ui form">
-            <label>Select Drive: </label>
-            <select
-              className="ui search dropdown"
-              value={this.state.driveName}
-              onChange={e => {
-                this.setState({ driveName: e.target.value });
-              }}
-            >
-              <option value="">Select Drive</option>
-              {driveMenu}
-            </select>
-            <br />
-            <label>Select Date: </label>
-            <br />
-            <DatePicker
-              dateFormat="dd/MM/yyyy"
-              selected={this.state.date}
-              onChange={dateDetail => {
-                console.log(this.state.date);
-                this.setState({ date: dateDetail })}}
-            />
-          </form>
+        <h1>Drive Performance</h1>
+        <div className="ui form">
+          <label>Select Date :</label>
           <br />
-        </div>
-        <div>
+          <DatePicker
+            dateFormat="dd/MM/yyyy"
+            selected={this.state.date}
+            onChange={dateDetail => {
+              console.log(this.state.date);
+              this.getDrives(dateDetail);
+              this.setState({ date: dateDetail });
+            }}
+          />
           <br />
-          <button className="ui button">
-            <i className="check icon" onClick={this.enableTable} />
+          <label>Select Drive : </label>
+          <select
+            className="ui search dropdown"
+            value={this.state.driveName}
+            onChange={e => {
+              this.setState({ driveName: e.target.value });
+            }}
+          >
+            <option value="">Select Drive</option>
+            {driveMenu}
+          </select>
+          <br />
+          <button className="ui button" onClick={this.enableTable}>
+            <i className="check icon" />
           </button>
         </div>
         <div>
@@ -174,6 +216,7 @@ class Page extends React.Component {
                 <tr>
                   <th>Roll No.</th>
                   <th>Round Name</th>
+                  <th>Attendance</th>
                   <th>Action</th>
                 </tr>
               </thead>
@@ -186,13 +229,4 @@ class Page extends React.Component {
   }
 }
 
-const mapStateToProps = state => {
-  return {
-    perfData: state.perfData
-  };
-};
-
-export default connect(
-  mapStateToProps,
-  { FetchPerfData }
-)(Page);
+export default Page;

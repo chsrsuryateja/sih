@@ -45,10 +45,13 @@ class DriveView extends React.Component {
     }
 
     const data = { rounds: this.state.rounds, date: this.state.date };
-    console.log(data)
+    console.log(data);
     tnpbase
       .post("/drives/modify", { data })
-      .then(() => {this.setState({ showTickButtons: false }); this.fetchUpcomingDrives()})
+      .then(() => {
+        this.setState({ showTickButtons: false });
+        this.fetchUpcomingDrives();
+      })
       .catch(err => console.log(err));
 
     console.log("submit Clicked", this.state);
