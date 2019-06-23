@@ -5,7 +5,7 @@ import tnpbase from "../api/tnpbase";
 
 class Page extends React.Component {
   state = {
-    driveName: "",
+    drive_id: 0,
     drives: [],
     rounds: [],
     date: null,
@@ -27,17 +27,6 @@ class Page extends React.Component {
       });
   };
 
-  getRoundsList = () => {
-    let data = { date: this.state.date, driveName: this.state.driveName };
-    tnpbase
-      .post("/drives/roundList", data)
-      .then(response => {
-        this.setState({ rounds: response.data });
-      })
-      .catch(err => {
-        console.log(err);
-      });
-  };
 
   buttonHandle = i =>
     this.state.detailEdit[i].editStatus ? (
@@ -48,8 +37,8 @@ class Page extends React.Component {
           onClick={() => {
             let data = {
               HTNO: this.state.studentDetails[i].HTNO,
-              roundName: this.state.studentDetails[i].roundName,
-              attendanceStatus : this.state.studentDetails[i].attendanceStatus
+              round_name: this.state.studentDetails[i].round_name,
+              attendanceStatus : this.state.studentDetails[i].attendance_status
             };
             tnpbase
              .post("/drives/performance/editDetail", data)
@@ -67,8 +56,8 @@ class Page extends React.Component {
           onClick={() => {
             let ups = this.state.detailEdit;
             ups[i].editStatus = !ups[i].editStatus;
-            this.state.studentDetails[i].roundName = ups[i].initialRoundName;
-            this.state.studentDetails[i].attendanceStatus = ups[i].initialAttendanceStatus;
+            this.state.studentDetails[i].round_name = ups[i].initialRoundName;
+            this.state.studentDetails[i].attendance_status = ups[i].initialAttendanceStatus;
             this.setState({detailEdit : ups});
           }}
         >
@@ -117,20 +106,20 @@ class Page extends React.Component {
                 }}
               >
                 {this.state.rounds.map(round => (
-                  <option value={round}>{round}</option>
+                  <option value={round.round_name}>{round.round_name}</option>
                 ))}
               </select>
             ) : (
-              number.roundName
+              number.round_name
             )}
           </td>
           <td>
             {this.state.detailEdit[i].editStatus ? (
               <select
                 className="ui search dropdown"
-                defaultValue={number.attendanceStatus}
+                defaultValue={number.attendance_status}
                 onChange={e => {
-                  number.attendanceStatus = e.target.value;
+                  number.attendance_status = e.target.value;
                 }}
               >
                 {this.state.values.map(status => (
@@ -138,7 +127,7 @@ class Page extends React.Component {
                 ))}
               </select>
             ) : (
-              number.roundName
+              number.attendance_status
             )}
           </td>
           <td>{this.buttonHandle(i)}</td>
@@ -149,21 +138,20 @@ class Page extends React.Component {
 
   enableTable = () => {
     let data = {
-      date: new Date(this.state.date).toLocaleDateString("en-GB"),
-      driveName: this.state.driveName
+      drive_id: this.state.drive_id
     };
     tnpbase
       .post("/drives/performance/driveDetails", data)
       .then(response => {
         console.log("Fetching Data");
-        for (let i = 0; i < response.data.length; i++) {
+        for (let i = 0; i < response.data.students.length; i++) {
           this.state.detailEdit.push({
             editStatus: false,
-            initialRoundName: response.data[i].roundName,
-            initialAttendanceStatus: response.data[i].attendanceStatus
+            initialRoundName: response.data.students[i].roundName,
+            initialAttendanceStatus: response.data.students[i].attendance_status
           });
         }
-        this.setState({ studentDetails: response.data });
+        this.setState({ studentDetails: response.data.students , rounds : response.data.rounds });
       })
       .catch(err => {
         console.log(err);
@@ -174,7 +162,7 @@ class Page extends React.Component {
 
   render() {
     let driveMenu = this.state.drives.map(drives => (
-      <option value={drives}>{drives}</option>
+      <option value={drives.drive_id}>{drives.company}</option>
     ));
     return (
       <div>
@@ -195,9 +183,9 @@ class Page extends React.Component {
           <label>Select Drive : </label>
           <select
             className="ui search dropdown"
-            value={this.state.driveName}
+            value={this.state.drive_id}
             onChange={e => {
-              this.setState({ driveName: e.target.value });
+              this.setState({ drive_id: e.target.value });
             }}
           >
             <option value="">Select Drive</option>
