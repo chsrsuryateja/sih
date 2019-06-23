@@ -83,7 +83,6 @@ class Page extends React.Component {
     );
 
   tableData = () => {
-    this.getRoundsList();
     if(this.state.studentDetails.length === 0) {
       return (
         <tr>
