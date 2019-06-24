@@ -1,7 +1,7 @@
 import React from "react";
 import FileUpload from "./FileUpload";
 import { connect } from "react-redux";
-import { RemoveFile } from "../actions/";
+import { removeFile } from "../actions/";
 
 const showSelectedFiles = props => {
   return props.files.map((file, i) => {
@@ -10,7 +10,7 @@ const showSelectedFiles = props => {
         <div className="right floated content">
           <button
             className="ui button secondary"
-            onClick={() => props.RemoveFile(file, props.inputRef)}
+            onClick={() => props.removeFile(file, props.inputRef)}
           >
             Remove
           </button>
@@ -71,5 +71,5 @@ const mapStateToProps = state => {
 
 export default connect(
   mapStateToProps,
-  { RemoveFile }
+  { removeFile }
 )(AddStudents);

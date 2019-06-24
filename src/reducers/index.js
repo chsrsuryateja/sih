@@ -1,7 +1,7 @@
 import { combineReducers } from "redux";
 import { reducer as formReducer } from "redux-form";
 
-const HandleFileReducer = (state = [], action) => {
+const handleFileReducer = (state = [], action) => {
   switch (action.type) {
     case "SELECT_FILES":
       return action.filesList;
@@ -13,7 +13,7 @@ const HandleFileReducer = (state = [], action) => {
   }
 };
 
-const SetRefReducer = (state = null, action) => {
+const setRefReducer = (state = null, action) => {
   switch (action.type) {
     case "SET_REF":
       return action.ref;
@@ -22,7 +22,7 @@ const SetRefReducer = (state = null, action) => {
   }
 };
 
-const FetchRoundsReducer = (state = [], action) => {
+const fetchRoundsReducer = (state = [], action) => {
   switch (action.type) {
     case "FETCH_ROUNDS":
       return action.payload;
@@ -31,39 +31,49 @@ const FetchRoundsReducer = (state = [], action) => {
   }
 };
 
-const FetchUpcomingDrives = (state = [], action) => {
-  switch(action.type) {
-    case "FETCH_UPCOMING_DRIVES":
+const fetchDrives = (state = [], action) => {
+  switch (action.type) {
+    case "FETCH_DRIVES":
       return action.payload;
     default:
       return state;
   }
 };
 
-const FetchDrives = (state =[], action) => {
-  switch(action.type) {
-    case "FETCH_DRIVES":
+const handleSetAddRound = (state = "", action) => {
+  switch (action.type) {
+    case "SET_ADD_ROUND":
       return action.payload;
+    default:
+      return state;
+  }
+};
+
+const handleSetEditDrive = (state = "", action) => {
+  switch (action.type) {
+    case "SET_EDIT_DRIVE":
+      return action.payload;
+    default:
+      return state;
+  }
+};
+
+const fetchYearReducer = (state = [], action) => {
+  switch(action.type) {
+    case "FETCH_YEARS":
+      return action.data;
     default:
       return state;
   }
 }
 
-const FetchPerfData =  (state = [], action) => {
-  switch(action.type) {
-    case "FETCH_PERF_DATA":
-      return action.payload;
-    default:
-      return state;
-  }
-}
 export default combineReducers({
-  selectedFiles: HandleFileReducer,
-  inputRef: SetRefReducer,
-  roundsList: FetchRoundsReducer,
+  selectedFiles: handleFileReducer,
+  inputRef: setRefReducer,
+  roundsList: fetchRoundsReducer,
   form: formReducer,
-  upcomingDrives: FetchUpcomingDrives,
-  drivesList: FetchDrives,
-  perfData: FetchPerfData
-  
+  drives: fetchDrives,
+  setAddRound: handleSetAddRound,
+  setEditDrive: handleSetEditDrive,
+  driveYears: fetchYearReducer
 });

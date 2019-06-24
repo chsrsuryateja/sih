@@ -1,6 +1,6 @@
 import React from "react";
 import { connect } from "react-redux";
-import { FetchRounds } from "../actions/";
+import { fetchRounds } from "../actions/";
 import tnpbase from "../api/tnpbase";
 
 class RoundsConfig extends React.Component {
@@ -9,20 +9,19 @@ class RoundsConfig extends React.Component {
   addRound = () => {
     console.log(typeof {data:this.state.round});
     tnpbase
-      .put("/round/add", { data: this.state.round })
-      .then(() => {
-        this.setState({ showForm: false });
-        this.props.FetchRounds();
+      .post("/round/add", { data: this.state.round })
+      .then((res) => {
+        this.props.fetchRounds();
+        this.setState({ showForm: false , round : "" });
       })
       .catch(err => console.log(err));
   };
 
   deleteRound = data => {
-    console.log(typeof {id:data});
-    data ={ id:data }
+    console.log(data);
     tnpbase
-      .post("/rounds/delete",data )
-      .then(() => this.props.FetchPosts())
+      .post("/rounds/delete",data)
+      .then(() => this.props.fetchRounds())
       .catch(err => console.log(err));
   };
 
@@ -51,7 +50,8 @@ class RoundsConfig extends React.Component {
             </button>
             <button
               className="ui button"
-              onClick={() => this.setState({ showForm: false })}
+              onClick={() => {
+                this.setState({ showForm: false , round :"" })}}
             >
               <i className="x icon" />
             </button>
@@ -76,11 +76,11 @@ class RoundsConfig extends React.Component {
       return (
         <tr key={i}>
           <td>{round.id}</td>
-          <td>{round.name}</td>
+          <td>{round.round_name}</td>
           <td>
             <button
               className="ui basic icon button"
-              onClick={() => this.props.deleteRound(round)}
+              onClick={() => this.deleteRound(round)}
             >
               <i className="trash icon" />
             </button>
@@ -89,16 +89,18 @@ class RoundsConfig extends React.Component {
       );
     });
   };
+
   componentDidMount = () => {
-    this.props.FetchRounds();
+    this.props.fetchRounds();
   };
+
   render() {
     return (
       <div className="ui container">
         <button
           className="ui right floated secondary button"
           style={{ margin: "5px" }}
-          onClick={() => this.setState({ showForm: !this.state.showForm })}
+          onClick={() => this.setState({ showForm: !this.state.showForm  , round : ""})}
         >
           Add Round
         </button>
@@ -119,12 +121,14 @@ class RoundsConfig extends React.Component {
     );
   }
 }
+
 const mapStateToProps = state => {
   return {
     rounds: state.roundsList
   };
 };
+
 export default connect(
   mapStateToProps,
-  { FetchRounds }
+  { fetchRounds }
 )(RoundsConfig);

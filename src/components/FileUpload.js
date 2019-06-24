@@ -1,11 +1,11 @@
 import React from "react";
 import Files from "react-files";
 import { connect } from "react-redux";
-import { SelectFiles, SetRef } from "../actions";
+import { selectFiles, setRef } from "../actions";
 
 class FileUpload extends React.Component {
   componentDidMount = () => {
-    this.props.SetRef(this.refs.files)
+    this.props.setRef(this.refs.files)
   }
   render() {
     return (
@@ -25,7 +25,7 @@ class FileUpload extends React.Component {
           className="ui floating message"
           clickable
           multiple
-          onChange={(files) => this.props.SelectFiles(files)}
+          onChange={(files) => this.props.selectFiles(files)}
           accepts={[".xlsx",".csv"]}
         >
           <h3>Drag Files here or Click to select</h3>
@@ -43,5 +43,5 @@ const mapStateToProps = state => {
 
 export default connect(
   mapStateToProps,
-  { SelectFiles, SetRef }
+  { selectFiles, setRef }
 )(FileUpload);

@@ -10,8 +10,8 @@ import AddStudentsDisplay from "./components/AddStudents";
 import FilterStudentsDisplay from "./components/FilterStudents";
 import SearchStudentDisplay from "./components/SearchStudent";
 
-import AddDriveDisplay from "./components/AddDrive";
-import DriveViewDisplay from "./components/DriveView";
+import AddDriveDisplay from "./components/AddDrives/AddDrive";
+import DriveViewDisplay from "./components/DrivesView/DriveView";
 import RoundsConfigDisplay from "./components/RoundsConfig";
 
 import DriveAttendanceDisplay from "./components/DriveAttendance";
@@ -20,11 +20,9 @@ import DrivePerformanceDisplay from "./components/DrivePerformance";
 import NewTestDisplay from "./components/NewTestDisplay";
 import TestPerformaceDisplay from "./components/TestPerformace";
 
-import Table from "./components/Table2";
-
 import tnpbase from "./api/tnpbase";
 
-import { FetchRounds } from "./actions";
+import { fetchRounds, fetchYears } from "./actions";
 
 import "./App.css";
 import { connect } from "react-redux";
@@ -40,7 +38,7 @@ class App extends React.Component {
     const formData = new FormData()
     Object.keys(files).forEach((key) => {
       const file = files[key]
-      formData.append(key, new Blob([file], { type: file.type }), file.name || 'file')
+      formData.append("file", new Blob([file], { type: file.type }), file.name || 'file')
     })
     tnpbase.post("/students/add/", formData, {
       onUploadProgress: ProgressEvent => {
@@ -52,7 +50,8 @@ class App extends React.Component {
   };
 
   componentDidMount = () => {
-    this.props.FetchRounds();
+    this.props.fetchRounds();
+    this.props.fetchYears();
   }
 
   render() {
@@ -95,10 +94,6 @@ class App extends React.Component {
                 path="/tests/performance"
                 component={TestPerformaceDisplay}
               />
-              <Route
-                path="/tableTest"
-                component={Table}
-              />
             </Switch>
           </div>
         </div>
@@ -108,4 +103,4 @@ class App extends React.Component {
 }
 
 
-export default connect(null, {FetchRounds})(App);
+export default connect(null, {fetchRounds, fetchYears })(App);

@@ -11,12 +11,13 @@ class Page extends React.Component {
     date: null,
     studentDetails: [],
     values: ["P", "A"],
+    selectionStatus: ["Selected", "Not Selected"],
+    offerStatus: ["Submitted", "Not Submitted"],
     detailEdit: []
   };
 
   getDrives = dateDetail => {
-    let data = { date: new Date(dateDetail).toLocaleDateString("en-GB") };
-    console.log(data);
+    const data = { date: new Date(dateDetail).toLocaleDateString("en-GB") };
     tnpbase
       .post("/drives/drivesList", data)
       .then(response => {
@@ -27,7 +28,6 @@ class Page extends React.Component {
       });
   };
 
-
   buttonHandle = i =>
     this.state.detailEdit[i].editStatus ? (
       <div className="ui basic icon buttons">
@@ -36,17 +36,33 @@ class Page extends React.Component {
           style={{ margin: "5px" }}
           onClick={() => {
             let data = {
+              drive_id: this.state.drive_id,
               HTNO: this.state.studentDetails[i].HTNO,
               round_name: this.state.studentDetails[i].round_name,
-              attendanceStatus : this.state.studentDetails[i].attendance_status
+              attendanceStatus: this.state.studentDetails[i].attendance_status,
+              selected: this.state.studentDetails[i].selected,
+              offer_letter: this.state.studentDetails[i].offer_letter
             };
             tnpbase
-             .post("/drives/performance/editDetail", data)
-             .then((result)=>{
-               let ups = this.state.detailEdit;
-               ups[i].editStatus = ! ups[i].editStatus;
-               this.setState({studentDetails : result.data , detailEdit : ups});
-             })
+              .post("/drives/performance/editDetail", data)
+              .then(result => {
+                let ups = this.state.detailEdit;
+                ups[i].editStatus = !ups[i].editStatus;
+                ups[i].initialRoundName = this.state.studentDetails[
+                  i
+                ].round_name;
+                ups[i].initialAttendanceStatus = this.state.studentDetails[
+                  i
+                ].attendance_status;
+                ups[i].initialSelectStatus = this.state.studentDetails[
+                  i
+                ].selected;
+                ups[i].initialOfferStatus = this.state.studentDetails[
+                  i
+                ].offer_letter;
+                this.getDrives();
+                this.setState({ detailEdit: ups });
+              });
           }}
         >
           <i className="check icon" />
@@ -55,10 +71,13 @@ class Page extends React.Component {
           className="ui  button"
           onClick={() => {
             let ups = this.state.detailEdit;
+            let students = this.state.studentDetails;
             ups[i].editStatus = !ups[i].editStatus;
-            this.state.studentDetails[i].round_name = ups[i].initialRoundName;
-            this.state.studentDetails[i].attendance_status = ups[i].initialAttendanceStatus;
-            this.setState({detailEdit : ups});
+            students[i].round_name = ups[i].initialRoundName;
+            students[i].attendance_status = ups[i].initialAttendanceStatus;
+            students[i].selected = ups[i].initialSelectStatus;
+            students[i].offer_letter = ups[i].initialOfferStatus;
+            this.setState({ detailEdit: ups, studentDetails: students });
           }}
         >
           <i className="x icon" />
@@ -72,9 +91,8 @@ class Page extends React.Component {
           onClick={() => {
             let ups = this.state.detailEdit;
             ups[i].editStatus = !ups[i].editStatus;
-            this.setState({detailEdit : ups});
-          }
-        }
+            this.setState({ detailEdit: ups });
+          }}
         >
           <i className="pencil alternate icon" />
           Edit
@@ -83,10 +101,10 @@ class Page extends React.Component {
     );
 
   tableData = () => {
-    if(this.state.studentDetails.length === 0) {
+    if (this.state.studentDetails.length === 0) {
       return (
         <tr>
-          <td colSpan={4}>It's Lonely Here</td>
+          <td colSpan={6}>It's Lonely Here</td>
         </tr>
       );
     }
@@ -98,10 +116,9 @@ class Page extends React.Component {
             {this.state.detailEdit[i].editStatus ? (
               <select
                 className="ui search dropdown"
-                defaultValue={number.roundName}
+                defaultValue={number.round_name}
                 onChange={e => {
-                  console.log("Selected val, directly" + e.target.value);
-                  number.roundName = e.target.value;
+                  number.round_name = e.target.value;
                 }}
               >
                 {this.state.rounds.map(round => (
@@ -129,12 +146,45 @@ class Page extends React.Component {
               number.attendance_status
             )}
           </td>
+          <td>
+            {this.state.detailEdit[i].editStatus ? (
+              <select
+                className="ui search dropdown"
+                defaultValue={number.selected}
+                onChange={e => {
+                  number.selected = e.target.value;
+                }}
+              >
+                {this.state.selectionStatus.map(selection => (
+                  <option value={selection}>{selection}</option>
+                ))}
+              </select>
+            ) : (
+              number.selected
+            )}
+          </td>
+          <td>
+            {this.state.detailEdit[i].editStatus ? (
+              <select
+                className="ui search dropdown"
+                defaultValue={number.offer_letter}
+                onChange={e => {
+                  number.offer_letter = e.target.value;
+                }}
+              >
+                {this.state.offerStatus.map(selection => (
+                  <option value={selection}>{selection}</option>
+                ))}
+              </select>
+            ) : (
+              number.offer_letter
+            )}
+          </td>
           <td>{this.buttonHandle(i)}</td>
         </tr>
       );
     });
   };
-
   enableTable = () => {
     let data = {
       drive_id: this.state.drive_id
@@ -146,34 +196,45 @@ class Page extends React.Component {
         for (let i = 0; i < response.data.students.length; i++) {
           this.state.detailEdit.push({
             editStatus: false,
-            initialRoundName: response.data.students[i].roundName,
-            initialAttendanceStatus: response.data.students[i].attendance_status
+            initialRoundName: response.data.students[i].round_name,
+            initialAttendanceStatus:
+              response.data.students[i].attendance_status,
+            initialSelectStatus: response.data.students[i].selected,
+            initialOfferStatus: response.data.students[i].offer_letter
           });
         }
-        this.setState({ studentDetails: response.data.students , rounds : response.data.rounds });
+        this.setState({
+          studentDetails: response.data.students,
+          rounds: response.data.rounds
+        });
       })
       .catch(err => {
         console.log(err);
       });
-
-    console.log(data);
   };
-
   render() {
     let driveMenu = this.state.drives.map(drives => (
       <option value={drives.drive_id}>{drives.company}</option>
     ));
+
     return (
       <div>
-        <h1>Drive Performance</h1>
+        <div className="ui container">
+          <h3 className="ui center aligned icon header">
+            <i className="cogs icon" />
+            <div className="content">
+              Drive Performance
+              <div className="sub header">Student Performance</div>
+            </div>
+          </h3>
+        
         <div className="ui form">
           <label>Select Date :</label>
-          <br />
+          <br/>
           <DatePicker
             dateFormat="dd/MM/yyyy"
             selected={this.state.date}
             onChange={dateDetail => {
-              console.log(this.state.date);
               this.getDrives(dateDetail);
               this.setState({ date: dateDetail });
             }}
@@ -195,6 +256,7 @@ class Page extends React.Component {
             <i className="check icon" />
           </button>
         </div>
+        </div>
         <div>
           <br />
           <div className="ui container">
@@ -204,6 +266,8 @@ class Page extends React.Component {
                   <th>Roll No.</th>
                   <th>Round Name</th>
                   <th>Attendance</th>
+                  <th>Selected</th>
+                  <th>Offer Letter</th>
                   <th>Action</th>
                 </tr>
               </thead>
@@ -215,5 +279,4 @@ class Page extends React.Component {
     );
   }
 }
-
 export default Page;

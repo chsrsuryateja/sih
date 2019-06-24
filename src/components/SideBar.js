@@ -31,11 +31,11 @@ const SideBar = props => {
       <div className="item">
         <div className="header">Drive Management</div>
         <div className="menu">
-          <Link to="/drives/add" className="item">
-            Add Drive
-          </Link>
           <Link to="/drives/view" className="item">
             View Drives
+          </Link>
+          <Link to="/drives/add" className="item">
+            Add Drive
           </Link>
           <Link to="/rounds/config" className="item">
             Rounds Configuration
@@ -43,10 +43,10 @@ const SideBar = props => {
         </div>
       </div>
       <div className="item">
-        <div className="header">Student Drive Process</div>
+        <div className="header">Drive Reports</div>
         <div className="menu">
           <Link to="/drives/attendance" className="item">
-            Drive Attendance
+            Attendance
           </Link>
           <Link to="/drives/performance" className="item">
             Student Performance in Drive
@@ -67,9 +67,7 @@ const SideBar = props => {
       <div className="item">
         <div className="header">Support</div>
         <div className="menu">
-          <Link to="/tableTest" className="item">
-            tableTest
-          </Link>
+          {/* eslint-disable-next-line*/}
           <a className="item" href="#">
             E-mail Support
           </a>
