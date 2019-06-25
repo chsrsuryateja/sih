@@ -4,35 +4,46 @@ import tnpbase from "../api/tnpbase";
 class SearchStudent extends React.Component {
   state = {
     rollNumber: "",
-    editDetail : [],
-    detailList : [],
-    contentList : []
+    editDetail: [],
+    detailList: [],
+    contentList: []
   };
 
   getStudentData = () => {
     const data = { HTNO: this.state.rollNumber };
     // console.log(data);
     tnpbase
-     .post('search/student',data)
-     .then((result) =>{
+      .post("search/student", data)
+      .then(result => {
         this.setState({
-            detailList : Object.keys(result.data) , 
-            contentList : Object.values(result.data)});
-     })
-     .catch((err)=>{
+          detailList: Object.keys(result.data),
+          contentList: Object.values(result.data)
+        });
+      })
+      .catch(err => {
         console.log(err);
-     })
+      });
   };
 
-  tableData = () =>{
-    if(this.state.detailList.length === 0){
-        return(
-            <tr>
-                <td colSpan={3}>It's Lonely</td>
-            </tr>
-        );
+  personalData = () => {
+    if (this.state.detailList.length === 0) {
+      return (
+        <tr>
+          <td colSpan={3}>It's Lonely here</td>
+        </tr>
+      );
     }
-  }
+  };
+
+  driveData = () => {
+    if (this.state.detailList.length === 0) {
+      return (
+        <tr>
+          <td colSpan={3}>It's Lonely here</td>
+        </tr>
+      );
+    }
+  };
 
   render() {
     return (
@@ -54,26 +65,49 @@ class SearchStudent extends React.Component {
                 this.setState({ rollNumber: e.target.value });
               }}
             />
-            <button
-              class="ui secondary button"
-              onClick={this.getStudentData}
-            >
+            <button class="ui secondary button" onClick={this.getStudentData}>
               Search
             </button>
           </div>
         </div>
         <div>
-        <br />
+          <br />
+          <button
+              className="ui secondary button"
+              style={{
+                float: "right",
+                verticalAlign: "middle",
+                marginBottom: "5px"
+              }}
+            >
+              Edit Detail
+            </button>
+            <br/>
           <div className="ui container">
             <table className="ui blue table">
               <thead>
-                <tr>
-                  <th>Detail</th>
-                  <th>Content</th>
-                  <th>Action</th>
-                </tr>
+                <th>Personal Details</th>
               </thead>
-              <tbody>{this.tableData()}</tbody>
+              <tbody>{this.personalData()}</tbody>
+            </table>
+          </div>
+          <br/>
+          <div className="ui container">
+            <button
+              className="ui secondary button"
+              style={{
+                float: "right",
+                verticalAlign: "middle",
+                marginBottom: "5px"
+              }}
+            >
+              Edit Detail
+            </button>
+            <table className="ui blue table">
+              <thead>
+                <th>Drive Details</th>
+              </thead>
+              <tbody>{this.driveData()}</tbody>
             </table>
           </div>
         </div>
