@@ -4,34 +4,113 @@ import tnpbase from "../api/tnpbase";
 class SearchStudent extends React.Component {
   state = {
     rollNumber: "",
-    editDetail : [],
-    detailList : [],
-    contentList : []
+    editDetail: -1,
+    personalDetails: [],
+    editable : "",
+    content: "",
+    driveDetails: []
   };
 
   getStudentData = () => {
     const data = { HTNO: this.state.rollNumber };
-    // console.log(data);
     tnpbase
-     .post('search/student',data)
-     .then((result) =>{
+      .post('/student/details', data)
+      .then((result) => {
         this.setState({
-            detailList : Object.keys(result.data) , 
-            contentList : Object.values(result.data)});
-     })
-     .catch((err)=>{
+          personalDetails: result.data.personalDetails,
+          driveDetails: result.data.driveDetails
+        });
+      })
+      .catch((err) => {
         console.log(err);
-     })
+      })
   };
 
-  tableData = () =>{
-    if(this.state.detailList.length === 0){
-        return(
-            <tr>
-                <td colSpan={3}>It's Lonely</td>
-            </tr>
-        );
+  buttonHandle = (data,contentIndex) => {
+    return(
+      this.state.editDetail === contentIndex ? (
+        <div className="ui basic icon buttons">
+          <button
+            className="ui  button"
+            style={{ margin: "5px" }}
+            onClick={() => {
+              console.log("submit" , this.state.content);
+            }
+            }>
+            <i className="check icon" />
+          </button>
+          <button
+            className="ui  button"
+            onClick={() => {
+              console.log("Abort")
+              this.setState({editDetail : -1})
+            }}
+          >
+            <i className="x icon" />
+          </button>
+        </div>
+      ) : (
+          <div>
+            <button
+              className="ui  secondary button"
+              style={{ margin: "5px" }}
+              onClick={() => {
+                this.setState({ editDetail: contentIndex, content:data });
+              }}
+            >
+              <i className="pencil alternate icon" />
+              Edit
+              </button>
+          </div>
+        )
+    );
+
+  }
+
+  contentHandle = (data , contentIndex ) =>{
+    return(
+      this.state.editDetail === contentIndex ? (
+        <div class="ui input">
+        <input
+          type="text"
+          value={this.state.content}
+          onChange={e => {
+            this.setState({ content : e.target.value });
+          }}
+        />
+        </div>
+      ) : (
+          <div>
+            {data}
+          </div>
+        )
+    );
+  }
+
+  personalData = () => {
+    this.state.personalDetails = [{ "htno": "17a31a0534", "haha": "adwew" }];
+
+    if (this.state.personalDetails.length === 0) {
+      return (
+        <tr>
+          <td colSpan={3}>It's Lonely Here</td>
+        </tr>
+      );
     }
+    let details = Object.keys(this.state.personalDetails[0]);
+    let content = Object.values(this.state.personalDetails[0]);
+    
+    return (
+      details.map((detail, contentIndex) => {
+        return (
+          <tr key={contentIndex}>
+            <td>{detail}</td>
+            <td>{this.contentHandle(content[contentIndex],contentIndex)}</td>
+            <td>{this.buttonHandle(content[contentIndex] , contentIndex)}</td>
+          </tr>
+        )
+      })
+    );
   }
 
   render() {
@@ -63,9 +142,10 @@ class SearchStudent extends React.Component {
           </div>
         </div>
         <div>
-        <br />
+          <br />
           <div className="ui container">
             <table className="ui blue table">
+              <caption style={{ fontSize: '25px', height: "25px" }}>Personal Details</caption>
               <thead>
                 <tr>
                   <th>Detail</th>
@@ -73,7 +153,7 @@ class SearchStudent extends React.Component {
                   <th>Action</th>
                 </tr>
               </thead>
-              <tbody>{this.tableData()}</tbody>
+              <tbody>{this.personalData()}</tbody>
             </table>
           </div>
         </div>
