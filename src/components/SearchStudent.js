@@ -17,8 +17,8 @@ class SearchStudent extends React.Component {
       .post('/student/details', data)
       .then((result) => {
         this.setState({
-          personalDetails: result.data.personalDetails,
-          driveDetails: result.data.driveDetails
+          personalDetails: result.data.personal,
+          driveDetails: result.data.drives
         });
       })
       .catch((err) => {
@@ -26,7 +26,7 @@ class SearchStudent extends React.Component {
       })
   };
 
-  buttonHandle = (data,contentIndex) => {
+  buttonHandle = (detail,data,contentIndex) => {
     return(
       this.state.editDetail === contentIndex ? (
         <div className="ui basic icon buttons">
@@ -35,12 +35,22 @@ class SearchStudent extends React.Component {
             style={{ margin: "5px" }}
             onClick={() => {
               console.log("submit" , this.state.content);
+              let ups = this.state.personalDetails;
+              ups[detail] = this.state.content;
+              tnpbase 
+                .post('/student/editDetail',ups)
+                .then(()=>{
+                  this.getStudentData();
+                  console.log("Succesfull");
+                  this.setState({editDetail : -1})
+                })
+                .catch((err)=>{console.log(err)})
             }
             }>
-            <i className="check icon" />
+            <i className="check icon"/>
           </button>
           <button
-            className="ui  button"
+            className="ui button"
             onClick={() => {
               console.log("Abort")
               this.setState({editDetail : -1})
@@ -88,7 +98,7 @@ class SearchStudent extends React.Component {
   }
 
   personalData = () => {
-    this.state.personalDetails = [{ "htno": "17a31a0534", "haha": "adwew" }];
+    this.state.personalDetails = { "htno": "17a31a0534", "haha": "adwew" };
 
     if (this.state.personalDetails.length === 0) {
       return (
@@ -97,8 +107,8 @@ class SearchStudent extends React.Component {
         </tr>
       );
     }
-    let details = Object.keys(this.state.personalDetails[0]);
-    let content = Object.values(this.state.personalDetails[0]);
+    let details = Object.keys(this.state.personalDetails);
+    let content = Object.values(this.state.personalDetails);
     
     return (
       details.map((detail, contentIndex) => {
@@ -106,7 +116,7 @@ class SearchStudent extends React.Component {
           <tr key={contentIndex}>
             <td>{detail}</td>
             <td>{this.contentHandle(content[contentIndex],contentIndex)}</td>
-            <td>{this.buttonHandle(content[contentIndex] , contentIndex)}</td>
+            <td>{this.buttonHandle(detail,content[contentIndex] , contentIndex)}</td>
           </tr>
         )
       })
