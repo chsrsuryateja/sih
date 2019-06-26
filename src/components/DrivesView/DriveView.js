@@ -1,61 +1,82 @@
 import React from "react";
 import { connect } from "react-redux";
 import tnpbase from "../../api/tnpbase";
-import DriveViewForm from "./DriveViewForm"
+import DriveViewForm from "./DriveViewForm";
+import {
+  fetchDrives,
+  setEditDriveAction,
+  setAddRoundAction
+} from "../../actions";
 
-const deleteRound = (drive_id, round_id, noOfRounds) => {
-  const data = { drive_id, round_id, noOfRounds };
-  console.log(data);
-  tnpbase
-    .post("/drives/rounds/delete", { data })
-    .then(() => {
-      this.fetchUpcomingDrives();
-    })
-    .catch(err => console.log(err));
-};
-
-const deleteDrive = drive => {
-  tnpbase
-    .post("/drives/delete", { data: drive })
-    .then(() => {
-      console.log("In delete");
-      this.fetchUpcomingDrives();
-    })
-    .catch(err => console.log(err));
-};
-
-const submitData = drive_id => {
-  if (this.state.newRound !== "") {
-    const final_rounds = this.state.rounds;
-    final_rounds.push(this.state.newRound);
-    this.setState({ rounds: final_rounds });
-  }
-  const data = {
-    rounds: this.state.rounds,
-    date: this.state.date.toLocaleDateString("en-GB"),
-    drive_id: drive_id
+class DriveView extends React.Component {
+  deleteRound = (drive_id, round_id, noOfRounds, driveYear) => {
+    const data = { drive_id, round_id, noOfRounds };
+    tnpbase
+      .post("/drives/rounds/delete", { data })
+      .then(res => {
+        if (res.status === 200) {
+          this.props.fetchDrives(driveYear);
+        } else {
+          window.alert(`Error: ${res.data.status} \n ${res.data.error}`);
+        }
+      })
+      .catch(err => window.alert(`Error: ${err.message}`));
   };
-  console.log(data);
-  tnpbase
-    .post("/drives/modify", { data })
-    .then(() => {
-      this.setState({ showTickButtons: false });
-      this.fetchUpcomingDrives();
-    })
-    .catch(err => console.log(err));
-};
 
-const DriveView = props => {
-  return(
-    <div>
-      <DriveViewForm
-      deleteRound={deleteRound}
-      submitData={submitData}
-      deleteDrive={deleteDrive}
-      />
-    </div>
-  );
-};
+  deleteDrive = (drive, driveYear) => {
+    tnpbase
+      .post("/drives/delete", { data: drive })
+      .then(res => {
+        if (res.status === 200) {
+          this.props.fetchDrives(driveYear);
+        } else {
+          window.alert(`Error: ${res.data.status} \n ${res.data.error}`);
+        }
+      })
+      .catch(err => window.alert(`Error: ${err.message}`));
+  };
+
+  submitData = (formValues, drive_id, year) => {
+    const roundIds = [];
+    const reqKeys = Object.keys(formValues).filter(key =>
+      key.startsWith("round")
+    );
+    for (let i = 0; i < reqKeys.length; i++) {
+      roundIds.push(parseInt(formValues[reqKeys[i]]));
+    }
+    if (formValues.newRound) {
+      roundIds.push(parseInt(formValues.newRound));
+    }
+    const data = {
+      date: formValues.date.toLocaleDateString("en-GB"),
+      roundIds,
+      drive_id
+    };
+    tnpbase
+      .post("/drives/modify", { data })
+      .then((res) => {
+        if (res.status === 200) {
+          this.props.fetchDrives(year);
+          this.props.setAddRoundAction(-1);
+          this.props.setEditDriveAction(-1);
+        } else {
+          window.alert(`Error: ${res.data.status} \n ${res.data.error}`);
+        }
+      })
+      .catch(err => window.alert(`Error: ${err.message}`));
+  };
+  render() {
+    return (
+      <div>
+        <DriveViewForm
+          deleteRound={this.deleteRound}
+          submitData={this.submitData}
+          deleteDrive={this.deleteDrive}
+        />
+      </div>
+    );
+  }
+}
 
 const mapStateToProps = state => {
   return {
@@ -63,4 +84,7 @@ const mapStateToProps = state => {
   };
 };
 
-export default connect(mapStateToProps)(DriveView);
+export default connect(
+  mapStateToProps,
+  { fetchDrives, setAddRoundAction, setEditDriveAction }
+)(DriveView);

@@ -192,7 +192,7 @@ class Page extends React.Component {
     tnpbase
       .post("/drives/performance/driveDetails", data)
       .then(response => {
-        console.log("Fetching Data");
+        console.log("Fetching Data" , response.data);
         for (let i = 0; i < response.data.students.length; i++) {
           this.state.detailEdit.push({
             editStatus: false,

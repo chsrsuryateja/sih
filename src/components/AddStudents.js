@@ -2,6 +2,8 @@ import React from "react";
 import FileUpload from "./FileUpload";
 import { connect } from "react-redux";
 import { removeFile } from "../actions/";
+import SuccessMessage from "./ui_utils/SuccessMessage";
+import ErrorDisplay from "./ui_utils/ErrorDisplay";
 
 const showSelectedFiles = props => {
   return props.files.map((file, i) => {
@@ -22,12 +24,24 @@ const showSelectedFiles = props => {
   });
 };
 
+const displayStatus = props => {
+  if (props.submitted) {
+    if (props.loading) {
+      return <h1>Loading</h1>;
+    } else if (props.error !== "") {
+      return <ErrorDisplay headerData={props.error} message={props.message} showTry={false} handleXClick={props.handleXClick} />;
+    } else {
+      return <SuccessMessage message={props.message} handleXClick={props.handleXClick} />;
+    }
+  }
+};
+
 const AddStudents = props => {
   return (
     <div>
       <h2 className="ui center aligned icon header" id="student-header">
         <i className="circular users icon" />
-       Import Student DB
+        Import Student DB
       </h2>
       <div className="ui centered grid">
         <div className="eight wide centered column">
@@ -49,13 +63,17 @@ const AddStudents = props => {
           <p>
             Total number of files selected: <b>{props.files.length}</b>
           </p>
-          <button 
-          className="ui blue labeled icon right floated  button"
-          onClick={() => props.handleUpload(props.files)}
+          <button
+            className="ui blue labeled icon right floated  button"
+            onClick={() => props.handleUpload(props.files)}
           >
-            <i className="upload icon"/>
+            <i className="upload icon" />
             Upload
-            </button>
+          </button>
+         <div style={{marginTop: "55px"}}>
+         {displayStatus(props)}
+         </div>
+
         </div>
       </div>
     </div>

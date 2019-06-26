@@ -4,6 +4,12 @@ import "react-datepicker/dist/react-datepicker.css";
 import tnpbase from "../../api/tnpbase";
 
 class AddDrive extends React.Component {
+  state = { loading: false, error: "", message: "", submitted: false };
+
+  handleXClick = () => {
+    this.setState({ submitted: false });
+  };
+
   submitForm = formValues => {
     const roundNames = [];
     for (let i = 0; i < formValues.noOfRounds; i++) {
@@ -20,14 +26,43 @@ class AddDrive extends React.Component {
 
     tnpbase
       .post("/drives/add", { data })
-      .then(() => console.log("data submitted"))
-      .catch(err => console.log(err));
+      .then(res => {
+        this.setState({submitted: true, loading: true})
+        if (res.status === 200) {
+          this.setState({
+            loading: false,
+            message: res.data.status,
+            error: ""
+          });
+        } else {
+          this.setState({
+            loading: false,
+            error: res.data.status,
+            message: res.data.error
+          });
+        }
+      })
+      .catch(err => {
+        console.log(err);
+        this.setState({
+          loading: false,
+          error: "Unable to add drive",
+          message: err.message
+        });
+      });
   };
 
   render() {
     return (
       <div className="ui container">
-        <AddDriveForm mySubmitForm={this.submitForm} />
+        <AddDriveForm
+          mySubmitForm={this.submitForm}
+          myMessage={this.state.message}
+          myError={this.state.error}
+          myLoading={this.state.loading}
+          mySubmitted={this.state.submitted}
+          handleXClick={this.handleXClick}
+        />
       </div>
     );
   }

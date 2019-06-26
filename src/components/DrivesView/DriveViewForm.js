@@ -2,7 +2,13 @@ import React from "react";
 import { connect } from "react-redux";
 import { Field, reduxForm, formValueSelector } from "redux-form";
 import { DatePickerNew, Select, ActionSelect } from "../ui_utils/";
-import { fetchDrives } from "../../actions/";
+import {
+  fetchDrives,
+  setAddRoundAction,
+  setEditDriveAction,
+  setDefaultDate,
+  setDefaultRounds
+} from "../../actions/";
 
 const displayRoundDropDown = props => {
   return (
@@ -28,7 +34,7 @@ const displayRoundDropDown = props => {
 const displayDate = (props, driveIndex, driveDate) => {
   return (
     <td>
-      {props.editable === driveIndex ? (
+      {props.editable === driveIndex + 1 ? (
         <form className="ui form">
           <Field
             component={DatePickerNew}
@@ -48,7 +54,7 @@ const displayDate = (props, driveIndex, driveDate) => {
 const displayDriveRounds = (props, driveIndex, drive) => {
   return (
     <td>
-      {props.editable === driveIndex ? (
+      {props.editable === driveIndex + 1 ? (
         <ol className="ui list">
           {drive.rounds.map((drive_round, driveRoundIndex) => {
             return (
@@ -79,14 +85,15 @@ const displayDriveRounds = (props, driveIndex, drive) => {
                 {round.round_name}
                 <button
                   className="mini ui right floated icon button"
-                  style={{ padding: 2.5 }}
-                  onClick={() =>
+                  style={{ padding: 2.5,  display: props.driveYear==="upcoming" ? "" : "none" }}
+                  onClick={() => {
                     props.deleteRound(
                       drive.drive_id,
                       round.id,
-                      drive.rounds.length
-                    )
-                  }
+                      drive.rounds.length,
+                      props.driveYear
+                    );
+                  }}
                 >
                   <i className="trash icon" />
                 </button>
@@ -95,7 +102,7 @@ const displayDriveRounds = (props, driveIndex, drive) => {
           })}
           <li
             style={{
-              display: props.showAddRound === driveIndex ? "" : "none"
+              display: props.showAddRound === driveIndex + 1 ? "" : "none"
             }}
           >
             {displayRoundDropDown(props)}
@@ -108,20 +115,24 @@ const displayDriveRounds = (props, driveIndex, drive) => {
 
 const displayButtons = (props, driveIndex, drive) => {
   return (
-    <td style={{ display: props.driveYear === "" ? "" : "none" }}>
-      {props.showTickButtons ? (
+    <td style={{ display: props.driveYear === "upcoming" ? "" : "none" }}>
+      {props.showAddRound === driveIndex + 1 ||
+      props.editable === driveIndex + 1 ? (
         <div className="ui basic icon buttons">
           <button
             className="ui button"
-            onClick={() => props.submitData(drive.drive_id)}
+            onClick={props.handleSubmit(formValues =>
+              props.submitData(formValues, drive.drive_id, props.driveYear)
+            )}
           >
             <i className="check icon" />
           </button>
           <button
             className="ui button"
             onClick={() => {
-              props.setAddRound(-1);
-              props.setEditDrive(-1);
+              props.reset();
+              props.setAddRoundAction(-1);
+              props.setEditDriveAction(-1);
             }}
           >
             <i className="x icon" />
@@ -132,7 +143,9 @@ const displayButtons = (props, driveIndex, drive) => {
           <button
             className=" ui button"
             onClick={() => {
-              props.setAddRound(driveIndex);
+              props.setDefaultDate(new Date(drive.date_of_drive));
+              props.setDefaultRounds(drive.rounds);
+              props.setAddRoundAction(driveIndex + 1);
             }}
           >
             <i className="add icon" />
@@ -140,14 +153,18 @@ const displayButtons = (props, driveIndex, drive) => {
           <button
             className="ui button"
             onClick={() => {
-              props.setEditDrive(driveIndex);
+              props.setDefaultDate(new Date(drive.date_of_drive));
+              props.setDefaultRounds(drive.rounds)
+              props.setEditDriveAction(driveIndex + 1);
             }}
           >
             <i className="edit icon" />
           </button>
           <button
             className="ui button"
-            onClick={() => props.deleteDrive(drive)}
+            onClick={() => {
+              props.deleteDrive(drive, props.driveYear);
+            }}
           >
             <i className="trash icon" />
           </button>
@@ -161,7 +178,7 @@ const displayDrives = props => {
   if (props.drives.length === 0) {
     return (
       <tr>
-        <td colSpan={5}>It's Lonely Here</td>
+        <td colSpan={8} style={{textAlign: "center"}}><b>It's Lonely Here</b></td>
       </tr>
     );
   }
@@ -181,7 +198,7 @@ const displayDrives = props => {
   });
 };
 
-const DriveViewForm = props => {
+const DriveViewForm = props => { 
   return (
     <div className="ui container">
       <h3 className="ui center aligned icon header">
@@ -198,16 +215,17 @@ const DriveViewForm = props => {
           required
           component={ActionSelect}
           buttonText="Get Drives"
+          label="Select year"
           onButtonClick={props.fetchDrives}
         >
-            <option value="">Upcoming drives</option>
-            {props.years.map((year, i) => {
-              return (
-                <option key={i} value={year.passing_out_year}>
-                  {year.passing_out_year}
-                </option>
-              );
-            })}
+          <option value="upcoming">Upcoming drives</option>
+          {props.years.map((year, i) => {
+            return (
+              <option key={i} value={year.passing_out_year}>
+                {year.passing_out_year}
+              </option>
+            );
+          })}
         </Field>
       </div>
       <br />
@@ -221,7 +239,7 @@ const DriveViewForm = props => {
             <th>Rounds</th>
             <th>Type</th>
             <th>Remarks</th>
-            <th style={{ display: props.driveYear ? "" : "none" }}>Action</th>
+            <th style={{ display: props.driveYear==="upcoming" ? "" : "none" }}>Action</th>
           </tr>
         </thead>
         <tbody>{displayDrives(props)}</tbody>
@@ -231,21 +249,31 @@ const DriveViewForm = props => {
 };
 
 const mapStateToProps = state => {
+  const defRounds ={};
+  for(let i = 0; i<state.defaultRounds.length; i++) {
+    defRounds[`rounds${i+1}`] = state.defaultRounds[i].id;
+  }
   return {
     rounds: state.roundsList,
-    setAddRound: state.setAddRound,
-    setEditDrive: state.setEditDrive,
+    showAddRound: state.setAddRound,
+    editable: state.setEditDrive,
     years: state.driveYears,
     drives: state.drives,
-    driveYear: formValueSelector("driveViewForm")(state, "driveYear")
+    driveYear: formValueSelector("driveViewForm")(state, "driveYear"),
+    initialValues: {
+      driveYear: "upcoming",
+      date: state.defaultDate,
+       ...defRounds
+    }
   };
 };
 
 export default connect(
   mapStateToProps,
-  { fetchDrives }
+  { fetchDrives, setAddRoundAction, setEditDriveAction, setDefaultDate, setDefaultRounds }
 )(
   reduxForm({
-    form: "driveViewForm"
+    form: "driveViewForm",
+    enableReinitialize: true
   })(DriveViewForm)
 );

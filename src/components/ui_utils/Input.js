@@ -72,3 +72,32 @@ export const IconInput = ({
     </div>
   );
 };
+
+export const ActionInput = ({
+  input,
+  placeholder,
+  type,
+  required,
+  label,
+  meta,
+  children
+}) => {
+  const showError = renderError(meta);
+  return(
+    <div className={`${required ? "required" : ""} field ${
+      showError ? "error" : ""
+    } `}>
+    <label>{label}</label>
+    <div className="ui right labeled input">
+      <input
+        type={type}
+        {...input}
+        placeholder={placeholder}
+      />
+        {children}
+    </div>
+    <div style={{ display: showError ? "" : "none" }}>{meta.error}</div>
+  </div>
+  );
+
+}

@@ -28,23 +28,24 @@ export const fetchRounds = () => async dispatch => {
 };
 
 export const fetchDrives = (year) => async dispatch => {
-  if (year === "") {
+  console.log("year", year)
+  if (year === "upcoming") {
     const response = await tnpbase.get("/drives/upcoming");
     dispatch({ type: "FETCH_DRIVES", payload: response.data.result });
   } else {
-    const response = await tnpbase.get("/drives/year", { data: year });
+    const response = await tnpbase.post("/drives/olddrive", { data: year });
     dispatch({ type: "FETCH_DRIVES", payload: response.data.result });
   }
 };
 
-export const setAddRound = driveID => {
+export const setAddRoundAction = driveID => {
   return {
     type: "SET_ADD_ROUND",
     payload: driveID
   };
 };
 
-export const setEditDrive = driveID => {
+export const setEditDriveAction = driveID => {
   return {
     type: "SET_EDIT_DRIVE",
     payload: driveID
@@ -54,4 +55,18 @@ export const setEditDrive = driveID => {
 export const fetchYears = () => async dispatch => {
   const response = await tnpbase.get("/passing/year");
   dispatch({ type: "FETCH_YEARS", data: response.data.result});
+}
+
+export const setDefaultDate = (date) => {
+  return{
+    type: "SET_DEF_DATE",
+    payload: date
+  };
+}
+
+export const setDefaultRounds = rounds => {
+  return {
+    type: "SET_DEF_ROUNDS",
+    payload: rounds
+  }
 }

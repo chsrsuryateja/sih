@@ -40,7 +40,7 @@ const fetchDrives = (state = [], action) => {
   }
 };
 
-const handleSetAddRound = (state = "", action) => {
+const handleSetAddRound = (state = -1, action) => {
   switch (action.type) {
     case "SET_ADD_ROUND":
       return action.payload;
@@ -49,7 +49,7 @@ const handleSetAddRound = (state = "", action) => {
   }
 };
 
-const handleSetEditDrive = (state = "", action) => {
+const handleSetEditDrive = (state = -1, action) => {
   switch (action.type) {
     case "SET_EDIT_DRIVE":
       return action.payload;
@@ -67,6 +67,24 @@ const fetchYearReducer = (state = [], action) => {
   }
 }
 
+const setDefaultDate = (state = null, action) => {
+  switch(action.type) {
+    case "SET_DEF_DATE":
+      console.log("hi");
+      return action.payload;
+    default:
+      return state;
+  }
+}
+
+const setDefaultRounds = (state = [], action) => {
+  switch(action.type) {
+    case "SET_DEF_ROUNDS":
+      return action.payload;
+    default:
+      return state
+  }
+}
 export default combineReducers({
   selectedFiles: handleFileReducer,
   inputRef: setRefReducer,
@@ -75,5 +93,7 @@ export default combineReducers({
   drives: fetchDrives,
   setAddRound: handleSetAddRound,
   setEditDrive: handleSetEditDrive,
-  driveYears: fetchYearReducer
+  driveYears: fetchYearReducer,
+  defaultDate: setDefaultDate,
+  defaultRounds: setDefaultRounds
 });

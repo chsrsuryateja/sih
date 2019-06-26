@@ -1,6 +1,18 @@
 import React from "react";
 import tnpbase from "../api/tnpbase";
-import Multiselect from "./Multiselect/MultiSelect";
+import { connect } from "react-redux";
+import {
+  ActionInput,
+  Select,
+  SelectActionInput,
+  Input,
+  ModifiedMultiSelect
+} from "./ui_utils";
+
+import ErrorDisplay from "./ui_utils/ErrorDisplay";
+import { fetchDrives } from "../actions/";
+import { Field, reduxForm } from "redux-form";
+import SuccessMessage from "./ui_utils/SuccessMessage";
 
 const data = [
   {
@@ -31,54 +43,115 @@ const data = [
 
 class FilterStudents extends React.Component {
   state = {
-    btechScore: "",
-    class10Score: "",
-    class12Score: "",
-    alreadySelected: "yes",
-    eamcetRank: "",
-    branch: [],
-    YOP: "",
-    backLogs: 0,
-    gender: "all",
-    btechScoreType: "",
-    class12ScoreType: "",
-    class10ScoreType: "",
-    filteredStudents: [],
     driveToAdd: "",
-    allDrives: []
+    filteredStudents: [],
+    loading: false,
+    error: "",
+    message: "",
+    additionalMsg: "",
+    submitted: false,
+    addToDriveClicked: false
   };
 
-  submitFilterDetails = () => {
+  componentDidUpdate = () => {
+    this.props.fetchDrives("upcoming");
+  };
+
+  handleXClick = () => {
+    this.setState({ submitted: false });
+  };
+
+  handleXClickFilter = () => {
+    this.setState({ addToDriveClicked: false });
+  };
+
+  displayStatus = () => {
+    if (this.state.submitted) {
+      if (this.state.loading) {
+        return (
+          <h3 style={{ textAlign: "center", color: "b#4ba5d8ue" }}>
+            ...Loading...
+          </h3>
+        );
+      } else if (this.state.error !== "") {
+        return (
+          <ErrorDisplay
+            headerData={this.state.error}
+            message={this.state.message}
+            showTry={false}
+            handleXClick={this.handleXClick}
+          />
+        );
+      }
+    }
+  };
+
+  displayFilterStatus = () => {
+    if (this.state.addToDriveClicked) {
+      if (this.state.loading) {
+        return (
+          <h3 style={{ textAlign: "center", color: "b#4ba5d8ue" }}>
+            ...Loading...
+          </h3>
+        );
+      } else if (this.state.error !== "") {
+        return (
+          <ErrorDisplay
+            headerData={this.state.error}
+            message={this.state.message}
+            showTry={false}
+            handleXClick={this.handleXClickFilter}
+          />
+        );
+      } else {
+        return (
+          <SuccessMessage
+            message={this.state.message}
+            handleXClick={this.handleXClickFilter}
+          />
+        );
+      }
+    }
+  };
+
+  submitFilterDetails = formValues => {
+    this.setState({ submitted: true, loading: true });
     const data = {
-      btech_score: this.state.btechScore || 0,
-      btech_score_type: this.state.btechScoreType,
-      branch: this.state.branch,
-      backlogs: this.state.backLogs,
-      class12_score: this.state.class12Score || 0,
-      class12_score_type: this.state.class12ScoreType,
-      class10_score: this.state.class10Score || 0,
-      class10_score_type: this.state.class10ScoreType,
-      eamcet_rank: this.state.eamcetRank || Infinity,
-      gender: this.state.gender,
-      isSelected: this.state.alreadySelected,
-      year_of_passing: this.state.YOP
+      btech_score: parseInt(formValues.btechScore),
+      btech_score_type: formValues.btechScoreType,
+      branch: formValues.selectedBranches,
+      backlogs: parseInt(formValues.backlogs),
+      class12_score: parseInt(formValues.class12Score),
+      class12_score_type: formValues.class12ScoreType,
+      class10_score: parseInt(formValues.class10Score),
+      class10_score_type: formValues.class10ScoreType,
+      eamcet_rank: parseInt(formValues.eamcetRank),
+      gender: formValues.gender,
+      isSelected: formValues.allowSelected,
+      year_of_passing: parseInt(formValues.yop)
     };
     tnpbase
       .post("/students/filter", { data })
       .then(res => {
-        this.setState({ filteredStudents: res.data.result });
-        this.getAllDrives();
+        if (res.status === 200) {
+          this.setState({
+            filteredStudents: res.data.result,
+            message: res.data.status,
+            loading: false,
+            error: ""
+          });
+        } else {
+          this.setState({ error: res.data.status, message: res.data.error });
+        }
       })
-      .catch(err => console.log(err));
-  };
-
-  getAllDrives = () => {
-    tnpbase
-      .get("/drives/upcoming")
-      .then(res => {
-        this.setState({ allDrives: res.data.result });
-      })
-      .catch(err => console.log(err));
+      .catch(err => {
+        console.log(err);
+        this.setState({
+          error: "Unable to filter students!",
+          message: err.message,
+          loading: false
+        });
+      });
   };
 
   showFilteredStudents = () => {
@@ -105,6 +178,7 @@ class FilterStudents extends React.Component {
   };
 
   addToDrive = () => {
+    this.setState({ addToDriveClicked: true, loading: true });
     const data = {
       driveToAdd: this.state.driveToAdd,
       students: this.state.filteredStudents
@@ -113,8 +187,24 @@ class FilterStudents extends React.Component {
       .post("/students/addToDrive", {
         data
       })
-      .then(res => console.log(res))
-      .catch(err => console.log(err));
+      .then(res => {
+        if (res.status === 200) {
+          this.setState({
+            message: res.data.status,
+            loading: false
+          });
+        } else {
+          this.setState({ error: res.data.status, message: res.data.error });
+        }
+      })
+      .catch(err => {
+        console.log(err);
+        this.setState({
+          error: "Unable to addd to drive!",
+          message: err.message,
+          loading: false
+        });
+      });
   };
 
   render() {
@@ -123,168 +213,129 @@ class FilterStudents extends React.Component {
         <h2 className="ui header center aligned">Filter Students</h2>
         <div className="ui form">
           <div className="two fields">
-            <div className="field">
-              <label>Btech Score</label>
-              <div className="ui right labeled input">
-                <input
-                  type="number"
-                  placeholder="Btech Score"
-                  value={this.state.btechScore}
-                  onChange={e => this.setState({ btechScore: e.target.value })}
-                />
-                <select
-                  className="menu"
-                  style={{ width: "100px" }}
-                  value={this.state.btechScoreType}
-                  onChange={e =>
-                    this.setState({ btechScoreType: e.target.value })
-                  }
-                >
-                  <option className="item" value="">
-                    Select
-                  </option>
-                  <option className="item" value="cgpa">
-                    CGPA
-                  </option>
-                  <option className="item" value="percentage">
-                    Percentage
-                  </option>
-                </select>
-              </div>
-            </div>
-            <div className="field">
-              <label>Backlogs</label>
-              <input
-                type="text"
-                placeholder="Backlogs"
-                value={this.state.backLogs}
-                onChange={e => this.setState({ backLogs: e.target.value })}
-              />
-            </div>
+            <Field
+              name="btechScore"
+              type="number"
+              label="Btech Score"
+              component={ActionInput}
+              placeholder="Btech Score"
+            >
+              <Field
+                name="btechScoreType"
+                component={SelectActionInput}
+                className="menu"
+                style={{ width: "100px" }}
+              >
+                <option className="item" value="cgpa">
+                  CGPA
+                </option>
+                <option className="item" value="percentage">
+                  Percentage
+                </option>
+              </Field>
+            </Field>
+            <Field
+              label="Backlogs"
+              name="backlogs"
+              type="number"
+              placeholder="Backlogs"
+              component={Input}
+            />
           </div>
           <div className="three fields">
-            <div className="field">
-              <label>Class 12 Score</label>
-              <div className="ui right labeled input">
-                <input
-                  type="number"
-                  placeholder="Class 12 Score"
-                  value={this.state.class12Score}
-                  onChange={e =>
-                    this.setState({ class12Score: e.target.value })
-                  }
-                />
-                <select
-                  className="menu"
-                  style={{ width: "100px" }}
-                  value={this.state.class12ScoreType}
-                  onChange={e =>
-                    this.setState({ class12ScoreType: e.target.value })
-                  }
-                >
-                  <option className="item" value="">
-                    Select
-                  </option>
-                  <option className="item" value="cgpa">
-                    CGPA
-                  </option>
-                  <option className="item" value="percentage">
-                    Percentage
-                  </option>
-                </select>
-              </div>
-            </div>
-            <div className="field">
-              <label>Class 10 Score</label>
-              <div className="ui right labeled input">
-                <input
-                  type="number"
-                  placeholder="Class 10 Score"
-                  value={this.state.class10Score}
-                  onChange={e =>
-                    this.setState({ class10Score: e.target.value })
-                  }
-                />
-                <select
-                  className="menu"
-                  style={{ width: "100px" }}
-                  value={this.state.class10ScoreType}
-                  onChange={e =>
-                    this.setState({ class10ScoreType: e.target.value })
-                  }
-                >
-                  <option className="item">Select</option>
-                  <option className="item" value="cgpa">
-                    CGPA
-                  </option>
-                  <option className="item" value="percentage">
-                    Percentage
-                  </option>
-                </select>
-              </div>
-            </div>
-            <div className="field">
-              <label>Eamcet Rank</label>
-              <input
-                type="number"
-                placeholder="Eamcet Rank"
-                value={this.state.eamcetRank}
-                onChange={e => this.setState({ eamcetRank: e.target.value })}
-              />
-            </div>
+            <Field
+              name="class12Score"
+              type="number"
+              label="Class 12 Score"
+              component={ActionInput}
+              placeholder="Class 12 Score"
+            >
+              <Field
+                name="class12ScoreType"
+                component={SelectActionInput}
+                className="menu"
+                style={{ width: "100px" }}
+              >
+                <option className="item" value="cgpa">
+                  CGPA
+                </option>
+                <option className="item" value="percentage">
+                  Percentage
+                </option>
+              </Field>
+            </Field>
+            <Field
+              name="class10Score"
+              type="number"
+              label="Class 10 Score"
+              component={ActionInput}
+              placeholder="Class 10 Score"
+            >
+              <Field
+                name="class10ScoreType"
+                component={SelectActionInput}
+                className="menu"
+                style={{ width: "100px" }}
+              >
+                <option className="item" value="cgpa">
+                  CGPA
+                </option>
+                <option className="item" value="percentage">
+                  Percentage
+                </option>
+              </Field>
+            </Field>
+
+            <Field
+              label="Eamcet Rank"
+              name="eamcetRank"
+              type="number"
+              placeholder="Eamcet Rank"
+              component={Input}
+            />
           </div>
           <div className="three fields">
-            <div className="field">
-              <label>Gender</label>
-              <select
-                value={this.state.gender}
-                onChange={e => this.setState({ gender: e.target.value })}
-              >
-                <option value="all">All</option>
-                <option value="M">Male</option>
-                <option value="F">Female</option>
-              </select>
-            </div>
-            <div className="required field">
-              <label>Year of Passing</label>
-              <input
-                type="number"
-                placeholder="YOP"
-                value={this.state.YOP}
-                onChange={e => this.setState({ YOP: e.target.value })}
-              />
-            </div>
-            <div className="field">
-              <label>Allow Students already selected?</label>
-              <select
-                value={this.state.alreadySelected}
-                onChange={e =>
-                  this.setState({ alreadySelected: e.target.value })
-                }
-              >
-                <option>Yes</option>
-                <option>No</option>
-              </select>
-            </div>
+            <Field name="gender" component={Select} label="Gender">
+              <option value="all">All</option>
+              <option value="M">Male</option>
+              <option value="F">Female</option>
+            </Field>
+            <Field
+              label="Year of Passing"
+              name="yop"
+              type="number"
+              placeholder="YOP"
+              required
+              component={Input}
+            />
+            <Field
+              name="allowSelected"
+              component={Select}
+              label="Allow Selected Students?"
+            >
+              <option value="yes">Yes</option>
+              <option value="no">NO</option>
+            </Field>
           </div>
           <div className="two fields">
-            <div className="required field">
-              <label>Branch</label>
-              <Multiselect
-                options={data}
-                onSelectOptions={res => this.setState({ branch: res })}
-              />
-            </div>
-            <div className="field">
-              <button
-                className="ui secondary button"
-                style={{ marginTop: "23px" }}
-                onClick={this.submitFilterDetails}
-              >
-                Filter
-              </button>
+            <Field
+              name="selectedBranches"
+              component={ModifiedMultiSelect}
+              data={data}
+              label="Branch"
+            />
+            <div className="field" style={{ marginTop: "10px" }}>
+              {this.displayStatus()}
             </div>
           </div>
+          <button
+            className={`ui secondary button ${
+              this.props.valid ? "" : "disabled"
+            }`}
+            onClick={this.props.handleSubmit(this.submitFilterDetails)}
+          >
+            Filter
+          </button>
         </div>
         <table className="ui blue celled structured striped compact table">
           <thead style={{ textAlign: "center" }}>
@@ -340,10 +391,13 @@ class FilterStudents extends React.Component {
                       }
                     >
                       <option value="">Select Drive</option>
-                      {this.state.allDrives.map(drive => {
+                      {this.props.allDrives.map((drive, someKey) => {
                         return (
-                          <option value={drive.drive_id}>
-                            {drive.company} - {new Date(drive.date_of_drive).toLocaleDateString('en-GB')}
+                          <option value={drive.drive_id} key={someKey}>
+                            {drive.company} -{" "}
+                            {new Date(drive.date_of_drive).toLocaleDateString(
+                              "en-GB"
+                            )}
                           </option>
                         );
                       })}
@@ -354,22 +408,98 @@ class FilterStudents extends React.Component {
               <th colSpan={7}>
                 <button
                   className={`ui small primary labeled icon button ${
-                    this.state.driveToAdd===""? "disabled" : ""
+                    this.state.driveToAdd === "" ? "disabled" : ""
                   }`}
                   onClick={this.addToDrive}
                   style={{ margin: "0 auto", display: "block" }}
                 >
                   <i className="user icon" /> Add to Drive
                 </button>
+                {this.displayFilterStatus()}
               </th>
             </tr>
           </tfoot>
         </table>
-        <br/>
-        <br/>
+        <br />
+        <br />
       </div>
     );
   }
 }
 
-export default FilterStudents;
+const validate = formValues => {
+  const errors = {};
+  if (
+    !(formValues.btechScore >= 5 && formValues.btechScore <= 10) &&
+    formValues.btechScoreType === "cgpa"
+  ) {
+    errors.btechScore = "CGPA must be between 5 and 10";
+  }
+  if (
+    !(formValues.btechScore >= 50 && formValues.btechScore <= 100) &&
+    formValues.btechScoreType === "percentage"
+  ) {
+    errors.btechScore = "Percentage must be between 50 and 100";
+  }
+  if (
+    !(formValues.class12Score >= 5 && formValues.class12Score <= 10) &&
+    formValues.class12ScoreType === "cgpa"
+  ) {
+    errors.class12Score = "CGPA must be between 5 and 10";
+  }
+  if (
+    !(formValues.class12Score >= 50 && formValues.class12Score <= 100) &&
+    formValues.class12ScoreType === "percentage"
+  ) {
+    errors.class12Score = "Percentage must be between 50 and 100";
+  }
+  if (
+    !(formValues.class10Score >= 5 && formValues.class10Score <= 10) &&
+    formValues.class10ScoreType === "cgpa"
+  ) {
+    errors.class10Score = "CGPA must be between 5 and 10";
+  }
+  if (
+    !(formValues.class10Score >= 50 && formValues.class10Score <= 100) &&
+    formValues.class10ScoreType === "percentage"
+  ) {
+    errors.class10Score = "Percentage must be between 50 and 100";
+  }
+  if (!formValues.yop) {
+    errors.yop = "Please enter YOP";
+  }
+  if (formValues.selectedBranches) {
+    if (formValues.selectedBranches.length === 0) {
+      errors.selectedBranches = "Please select atleast one branch";
+    }
+  }
+  return errors;
+};
+
+const mapStateToProps = state => {
+  return {
+    allDrives: state.drives
+  };
+};
+
+export default connect(
+  mapStateToProps,
+  { fetchDrives }
+)(
+  reduxForm({
+    form: "filterStudents",
+    initialValues: {
+      btechScoreType: "cgpa",
+      class10ScoreType: "cgpa",
+      class12ScoreType: "cgpa",
+      btechScore: 0,
+      class10Score: 0,
+      class12Score: 0,
+      selectedBranches: [],
+      gender: "all",
+      allowSelected: "yes",
+      eamcetRank: null
+    },
+    validate
+  })(FilterStudents)
+);

@@ -28,31 +28,64 @@ import "./App.css";
 import { connect } from "react-redux";
 
 class App extends React.Component {
-  state = { sidebarVisible: false, loading: 0 };
+  state = {
+    sidebarVisible: false,
+    loading: false,
+    error: "",
+    message: "",
+    submitted: false
+  };
 
   handleMenuClick = () => {
     this.setState({ sidebarVisible: !this.state.sidebarVisible });
   };
 
+  handleXClick = () => {
+    this.setState({ submitted: false });
+  };
+
   FileUploadHandler = files => {
-    const formData = new FormData()
-    Object.keys(files).forEach((key) => {
-      const file = files[key]
-      formData.append("file", new Blob([file], { type: file.type }), file.name || 'file')
-    })
-    tnpbase.post("/students/add/", formData, {
-      onUploadProgress: ProgressEvent => {
+    this.setState({ submitted: true, loading: true });
+    const formData = new FormData();
+    Object.keys(files).forEach(key => {
+      const file = files[key];
+      formData.append(
+        "file",
+        new Blob([file], { type: file.type }),
+        file.name || "file"
+      );
+    });
+    tnpbase
+      .post("/students/add/", formData)
+      .then(res => {
+        if (res.status === 200) {
+          this.setState({
+            loading: false,
+            message: res.data.status,
+            error: ""
+          });
+        } else {
+          this.setState({
+            loading: false,
+            error: res.data.status,
+            message: res.data.error
+          });
+        }
+      })
+      .catch(err => {
+        console.log(err);
         this.setState({
-          loaded: (ProgressEvent.loaded / ProgressEvent.total) * 100
+          loading: false,
+          error: "Unable to submit data",
+          message: err.message
         });
-      }
-    }).then().catch(err => console.log(err))
+      });
   };
 
   componentDidMount = () => {
     this.props.fetchRounds();
     this.props.fetchYears();
-  }
+  };
 
   render() {
     return (
@@ -70,7 +103,14 @@ class App extends React.Component {
               <Route
                 path="/students/add"
                 render={() => (
-                  <AddStudentsDisplay handleUpload={this.FileUploadHandler} />
+                  <AddStudentsDisplay
+                    handleUpload={this.FileUploadHandler}
+                    message={this.state.message}
+                    error={this.state.error}
+                    loading={this.state.loading}
+                    submitted={this.state.submitted}
+                    handleXClick={this.handleXClick}
+                  />
                 )}
               />
               <Route path="/students/search" component={SearchStudentDisplay} />
@@ -102,5 +142,7 @@ class App extends React.Component {
   }
 }
 
-
-export default connect(null, {fetchRounds, fetchYears })(App);
+export default connect(
+  null,
+  { fetchRounds, fetchYears }
+)(App);

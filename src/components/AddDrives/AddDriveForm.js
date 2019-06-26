@@ -2,6 +2,32 @@ import React from "react";
 import { connect } from "react-redux";
 import { Field, reduxForm, formValueSelector } from "redux-form";
 import { IconInput, DatePickerNew, CheckBox, Select } from "../ui_utils/";
+import SuccessMessage from "../ui_utils/SuccessMessage";
+import ErrorDisplay from "../ui_utils/ErrorDisplay";
+
+const displayStatus = props => {
+  if (props.mySubmitted) {
+    if (props.myLoading) {
+      return <h1>Loading</h1>;
+    } else if (props.myError !== "") {
+      return (
+        <ErrorDisplay
+          headerData={props.myError}
+          message={props.myMessage}
+          showTry={false}
+          handleXClick={props.handleXClick}
+        />
+      );
+    } else {
+      return (
+        <SuccessMessage
+          message={props.myMessage}
+          handleXClick={props.handleXClick}
+        />
+      );
+    }
+  }
+};
 
 const displaySelectRounds = props => {
   let tempArray = [];
@@ -84,6 +110,7 @@ const AddDriveForm = props => {
         <i className="paper plane icon" />
         Submit
       </button>
+      {displayStatus(props)}
     </form>
   );
 };
