@@ -98,7 +98,7 @@ class SearchStudent extends React.Component {
   }
 
   personalData = () => {
-    this.state.personalDetails = { "htno": "17a31a0534", "haha": "adwew" };
+    // this.state.personalDetails = { "htno": "17a31a0534", "haha": "adwew" };
 
     if (this.state.personalDetails.length === 0) {
       return (
