@@ -1,11 +1,17 @@
 import React from "react";
 import tnpbase from "../api/tnpbase";
 
+
 class SearchStudent extends React.Component {
   state = {
     rollNumber: "",
     editDetail: -1,
+    driveEditDetail : -1,
+    driveContent : [],
+    rounds : [],
     personalDetails: [],
+    selectionStatus: ["Selected", "Not Selected"],
+    offerStatus: ["Submitted", "Not Submitted"],
     editable : "",
     content: "",
     driveDetails: []
@@ -25,6 +31,20 @@ class SearchStudent extends React.Component {
         console.log(err);
       })
   };
+
+  getRounds = (drive) =>{
+    const data = { drive_name: drive};
+    tnpbase 
+      .post("/drive/rounds",data)
+      .then((result) => {
+        this.setState({
+          rounds : result.data
+        });
+      })
+      .catch((err) => {
+        console.log(err);
+      })
+  }
 
   buttonHandle = (detail,data,contentIndex) => {
     return(
@@ -123,6 +143,152 @@ class SearchStudent extends React.Component {
     );
   }
 
+  driveButtonHandle = (detail,driveIndex) =>{
+      return(
+        this.state.driveEditDetail === driveIndex ? (
+          <div className="ui basic icon buttons">
+          <button
+            className="ui  button"
+            style={{ margin: "5px" }}
+            onClick={() => {
+              console.log("submit" , detail);
+              let ups = this.state.driveDetails;
+              ups[driveIndex] = detail;
+              tnpbase 
+                .post('search/student/driveEditDetail',ups)
+                .then(()=>{
+                  this.getStudentData();
+                  console.log("Succesfull");
+                  this.setState({driveEditDetail : -1 , driveContent : []})
+                })
+                .catch((err)=>{console.log(err)})
+            }
+            }>
+            <i className="check icon"/>
+          </button>
+          <button
+            className="ui button"
+            onClick={() => {
+              console.log("Abort" , detail);
+
+              this.setState({driveEditDetail : -1 , driveContent : detail})
+            }}
+          >
+            <i className="x icon" />
+          </button>
+        </div>
+      ) : (
+          <div>
+            <button
+              className="ui  secondary button"
+              style={{ margin: "5px" }}
+              onClick={() => {
+                console.log(driveIndex , detail);
+                this.setState({ driveEditDetail: driveIndex, driveContent:detail });
+              }}
+            >
+              <i className="pencil alternate icon" />
+              Edit
+              </button>
+          </div>
+        )
+    );
+  }
+
+
+
+  drivesData = () =>{
+  let details = this.state.driveDetails;
+    if (details.length === 0) {
+      return (
+        <tr>
+          <td colSpan={5}>It's Lonely Here</td>
+        </tr>
+      );
+    }
+    return (
+      details.map((detail, driveIndex) => {
+        this.getRounds(detail.company);
+        return (
+          <tr key={driveIndex}>
+            <td>{detail.company}</td>
+            <td>
+            {
+              this.state.driveEditDetail === driveIndex ? (
+              <select
+                className="ui search dropdown"
+                defaultValue={detail.round_name}
+                onChange={e => {
+                  detail.round_name = e.target.value;
+                  console.log(detail);
+                }}
+              >
+                {this.state.rounds.map(selection => (
+                  <option value={selection}>{selection}</option>
+                ))}
+              </select>
+            ) : (
+              detail.round_name
+            )}
+            </td>
+            <td>
+            {this.state.driveEditDetail === driveIndex ? (
+              <select
+                className="ui search dropdown"
+                defaultValue={detail.selected}
+                onChange={e => {
+                  detail.selected = e.target.value;
+                  console.log(detail);
+                }}
+              >
+                {this.state.selectionStatus.map(selection => (
+                  <option value={selection}>{selection}</option>
+                ))}
+              </select>
+            ) : (
+              detail.selected
+            )}
+            </td>
+            <td>
+            {this.state.driveEditDetail === driveIndex ? (
+              <select
+                className="ui search dropdown"
+                defaultValue={detail.offer_letter}
+                onChange={e => {
+                  detail.offer_letter = e.target.value;
+                  console.log(detail);
+                }}
+              >
+                {this.state.offerStatus.map(selection => (
+                  <option value={selection}>{selection}</option>
+                ))}
+              </select>
+            ) : (
+              detail.offer_letter
+            )}
+            </td>
+            <td>{this.driveButtonHandle(detail,driveIndex)}</td>
+          </tr>
+        )
+      })
+    );
+  
+
+  }
+
+  displayForm = () =>{
+    return (
+      this.state.showForm ? (
+
+        <div>Haha</div>
+      
+    ) : (
+      <p>vachav</p>
+    )
+    )
+    
+  }
+
   render() {
     return (
       <div>
@@ -166,6 +332,45 @@ class SearchStudent extends React.Component {
               <tbody>{this.personalData()}</tbody>
             </table>
           </div>
+        </div>
+
+        <div>
+          <br />
+          <div className="ui container">
+            <table className="ui blue table">
+              <caption style={{ fontSize: '25px', height: "25px" }}>Drive Details</caption>
+              <thead>
+                <tr>
+                  <th>Drive</th>
+                  <th>Round Name</th>
+                  <th>Selected</th>
+                  <th>Offer Letter</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>{this.drivesData()}</tbody>
+            </table>
+          </div>
+        </div>
+        <br/>
+        <div className="ui buttons"
+          style={{
+            float: "right",
+            verticalAlign: "middle",
+            marginBottom: "5px"
+          }}>
+          <button 
+          className = "ui secondary button "
+          onClick ={
+            console.log("Hello")
+          }
+          >
+            Add to Drive
+          </button>
+        </div>
+        <div>
+          <br/>
+          {/* {this.displayForm()} */}
         </div>
       </div>
     );
