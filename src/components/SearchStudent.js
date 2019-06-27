@@ -9,10 +9,12 @@ class SearchStudent extends React.Component {
     driveEditDetail : -1,
     driveContent : [],
     rounds : [],
+    drives :[],
+    drive_id :[],
     personalDetails: [],
     selectionStatus: ["Selected", "Not Selected"],
     offerStatus: ["Submitted", "Not Submitted"],
-    editable : "",
+    showForm : false,
     content: "",
     driveDetails: []
   };
@@ -24,7 +26,7 @@ class SearchStudent extends React.Component {
       .then((result) => {
         this.setState({
           personalDetails: result.data.personal,
-          driveDetails: result.data.drives
+          driveDetails: result.data.drive
         });
       })
       .catch((err) => {
@@ -276,17 +278,65 @@ class SearchStudent extends React.Component {
 
   }
 
+  sendData =()=>{
+    let data = {HTNO : this.state.rollNumber , drive_id : this.state.drive_id}
+    tnpbase
+      .post('/drives/addStudent',data)
+      .then((res)=>{
+        console.log("Succesfully added");
+      })
+      .catch((err)=>{
+        console.log(err);
+      })
+  }
+
   displayForm = () =>{
+    let driveMenu = this.state.drives.map(drives => (
+      <option value={drives.drive_id}>{drives.company}</option>
+    ));
     return (
       this.state.showForm ? (
-
-        <div>Haha</div>
+        <div className = "ui form">
+          <label>Select Drive : </label>
+          <select
+            className="ui search dropdown"
+            value={this.state.drive_id}
+            onChange={e => {
+              this.setState({ drive_id: e.target.value });
+            }}
+          >
+            <option value="">Select Drive</option>
+            {driveMenu}
+            
+          </select>
+          <br/>
+          <button
+              class="ui secondary button"
+              onClick={this.sendData}
+            >
+              Add
+            </button>
+          <br />
+        </div>
       
     ) : (
-      <p>vachav</p>
+      ""
     )
     )
     
+  }
+
+  enableForm = () => {
+    tnpbase
+      .get('/drives/details')
+      .then((result)=>{
+        this.setState({drives : result.data});
+      })
+      .catch((err)=>{
+        console.log(err);
+      })
+    const curr = this.state.showForm;
+    this.setState({showForm : !curr});
   }
 
   render() {
@@ -362,7 +412,7 @@ class SearchStudent extends React.Component {
           <button 
           className = "ui secondary button "
           onClick ={
-            console.log("Hello")
+            this.enableForm
           }
           >
             Add to Drive
@@ -370,7 +420,8 @@ class SearchStudent extends React.Component {
         </div>
         <div>
           <br/>
-          {/* {this.displayForm()} */}
+          <br/>
+          {this.displayForm()}
         </div>
       </div>
     );
