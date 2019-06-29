@@ -1,46 +1,113 @@
 import React from "react";
 import tnpbase from "../api/tnpbase";
-
+import ErrorDisplay from "./ErrorDisplay";
+import SuccessMessage from "./SuccessMessage";
 
 class SearchStudent extends React.Component {
   state = {
     rollNumber: "",
     editDetail: -1,
-    driveEditDetail : -1,
-    driveContent : [],
-    rounds : [],
-    drives :[],
-    drive_id :"",
+    driveEditDetail: -1,
+    driveContent: [],
+    rounds: [],
+    drives: [],
+    drive_id: "",
     personalDetails: [],
     selectionStatus: ["Selected", "Not Selected"],
     offerStatus: ["Submitted", "Not Submitted"],
-    showForm : false,
+    showForm: false,
     content: "",
-    driveDetails: []
+    driveDetails: [],
+    status: "",
+    loading: true,
+    error: "",
+    formSubmitted: false,
+    submitStatus: "",
+    submitError: false,
+    showMessage: false,
+    statusCode: null
   };
 
+  toggleSubmit = () => {
+    this.setState({ formSubmitted: true });
+  }
+
   getStudentData = () => {
+    this.toggleSubmit();
     const data = { HTNO: this.state.rollNumber };
     tnpbase
       .post('/student/details', data)
       .then((result) => {
-        this.setState({
-          personalDetails: result.data.personal,
-          driveDetails: result.data.drive
-        });
-      })
+        console.log(result.data);
+        if (result.data.presentStatus === 0) {
+          this.setState({ submitError: true, submitStatus: "Enter valid number" });
+        } else {
+          if (result.status === 200) {
+            this.setState({
+              personalDetails: result.data.personal,
+              driveDetails: result.data.drive,
+              showMessage: true,
+              submitError : false,
+              submitStatus : "",
+              statusCode: 1
+            });
+          } else {
+            this.setState({ submitError: true, submitStatus: "Unable to send data to API" });
+          }
+        }
+      }
+      )
       .catch((err) => {
         console.log(err);
+        this.setState({ submitError: true, submitStatus: err.message });
       })
   };
 
-  getRounds = (drive) =>{
-    const data = { drive_name: drive};
-    tnpbase 
-      .post("/drive/rounds",data)
+  handleXClick = e => {
+    this.setState({ showMessage: false, formSubmitted: false });
+  };
+
+  displayMessage = () => {
+    if (this.state.formSubmitted) {
+      if (this.state.submitError) {
+        return (
+          <ErrorDisplay
+            message={this.state.submitStatus}
+            handleXClick={this.handleXClick}
+          />
+        );
+      } else if (this.state.showMessage) {
+        if (this.state.statusCode === 1) {
+          return (
+            <SuccessMessage
+              message={this.state.submitStatus}
+              handleXClick={this.handleXClick}
+            />
+          );
+        } else {
+          return (
+            <ErrorDisplay
+              headerData="Error!"
+              message={this.state.submitStatus}
+              handleXClick={this.handleXClick}
+            />
+          );
+        }
+      } else {
+        return <h3>Loading</h3>;
+      }
+    } else {
+      return "";
+    }
+  };
+
+  getRounds = (drive) => {
+    const data = { drive_name: drive };
+    tnpbase
+      .post("/drive/rounds", data)
       .then((result) => {
         this.setState({
-          rounds : result.data
+          rounds: result.data
         });
       })
       .catch((err) => {
@@ -48,8 +115,8 @@ class SearchStudent extends React.Component {
       })
   }
 
-  buttonHandle = (detail,data,contentIndex) => {
-    return(
+  buttonHandle = (detail, data, contentIndex) => {
+    return (
       this.state.editDetail === contentIndex ? (
         <div className="ui basic icon buttons">
           <button
@@ -58,22 +125,27 @@ class SearchStudent extends React.Component {
             onClick={() => {
               let ups = this.state.personalDetails;
               ups[detail] = this.state.content;
-              tnpbase 
-                .post('/student/editDetail',ups)
-                .then(()=>{
-                  this.getStudentData();
-                  this.setState({editDetail : -1})
+              tnpbase
+                .post('/student/editDetail', ups)
+                .then((res) => {
+                  if(res.status === 200){
+                    this.setState({ editDetail: -1  , submitError : false,
+                      submitStatus : res.data,
+                      statusCode: 1})
+                  }
                 })
-                .catch((err)=>{console.log(err)})
+                .catch((err) => { console.log(err); 
+                  this.setState({ submitError: true, submitStatus: err.message });
+               })
             }
             }>
-            <i className="check icon"/>
+            <i className="check icon" />
           </button>
           <button
             className="ui button"
             onClick={() => {
               console.log("Abort")
-              this.setState({editDetail : -1})
+              this.setState({ editDetail: -1 })
             }}
           >
             <i className="x icon" />
@@ -85,7 +157,7 @@ class SearchStudent extends React.Component {
               className="ui  secondary button"
               style={{ margin: "5px" }}
               onClick={() => {
-                this.setState({ editDetail: contentIndex, content:data });
+                this.setState({ editDetail: contentIndex, content: data });
               }}
             >
               <i className="pencil alternate icon" />
@@ -97,18 +169,30 @@ class SearchStudent extends React.Component {
 
   }
 
-  contentHandle = (data , contentIndex ) =>{
-    return(
+  contentHandle = (detail, data, contentIndex) => {
+    let noEdit = ["HTNO", "BRANCH_CODE"]
+    return (
       this.state.editDetail === contentIndex ? (
-        <div className="ui input">
-        <input
-          type="text"
-          value={this.state.content}
-          onChange={e => {
-            this.setState({ content : e.target.value });
-          }}
-        />
-        </div>
+        noEdit.includes(detail) ? (
+          <div className="ui input disabled">
+            <input
+              type="text"
+              value={this.state.content}
+              onChange={e => {
+                this.setState({ content: e.target.value });
+              }}
+            />
+          </div>
+        ) : (
+            <div className="ui input">
+              <input
+                type="text"
+                value={this.state.content}
+                onChange={e => {
+                  this.setState({ content: e.target.value });
+                }}
+              />
+            </div>)
       ) : (
           <div>
             {data}
@@ -127,51 +211,56 @@ class SearchStudent extends React.Component {
     }
     let details = Object.keys(this.state.personalDetails);
     let content = Object.values(this.state.personalDetails);
-    
+
     return (
       details.map((detail, contentIndex) => {
         return (
           <tr key={contentIndex}>
             <td>{detail}</td>
-            <td>{this.contentHandle(content[contentIndex],contentIndex)}</td>
-            <td>{this.buttonHandle(detail,content[contentIndex] , contentIndex)}</td>
+            <td>{this.contentHandle(detail, content[contentIndex], contentIndex)}</td>
+            <td>{this.buttonHandle(detail, content[contentIndex], contentIndex)}</td>
           </tr>
         )
       })
     );
   }
 
-  driveButtonHandle = (detail,driveIndex) =>{
+  driveButtonHandle = (detail, driveIndex) => {
 
-      return(
-        this.state.driveEditDetail === driveIndex ? (
-          <div className="ui basic icon buttons">
+    return (
+      this.state.driveEditDetail === driveIndex ? (
+        <div className="ui basic icon buttons">
           <button
             className="ui  button"
             style={{ margin: "5px" }}
             onClick={() => {
               let ups = this.state.driveDetails;
               ups[driveIndex] = detail;
-
-              const data = {ups, HTNO : this.state.rollNumber}
-              tnpbase 
-                .post('search/student/driveEditDetail',data)
-                .then(()=>{
-                  this.getStudentData();
-                  console.log("Succesfull");
-                  this.setState({driveEditDetail : -1 , driveContent : []})
+              const data = { ups, HTNO: this.state.rollNumber }
+              tnpbase
+                .post('search/student/driveEditDetail', data)
+                .then((res) => {
+                  if(res.status === 200){
+                      this.setState({ driveEditDetail: -1, driveContent: []  , submitError : false,
+                      submitStatus : res.data,
+                      statusCode: 1});
+                      this.getStudentData();
+                    }
                 })
-                .catch((err)=>{console.log(err)})
+                .catch((err) => { 
+                  console.log(err);
+                  this.setState({ submitError: true, submitStatus: err.message });
+                })
             }
             }>
-            <i className="check icon"/>
+            <i className="check icon" />
           </button>
           <button
             className="ui button"
             onClick={() => {
               console.log("Abort");
 
-              this.setState({driveEditDetail : -1 , driveContent : detail})
+              this.setState({ driveEditDetail: -1, driveContent: detail })
             }}
           >
             <i className="x icon" />
@@ -184,7 +273,7 @@ class SearchStudent extends React.Component {
               style={{ margin: "5px" }}
               onClick={() => {
                 this.getRounds(detail.company);
-                this.setState({ driveEditDetail : driveIndex, driveContent:detail });
+                this.setState({ driveEditDetail: driveIndex, driveContent: detail });
               }}
             >
               <i className="pencil alternate icon" />
@@ -197,8 +286,8 @@ class SearchStudent extends React.Component {
 
 
 
-  drivesData = () =>{
-  let details = this.state.driveDetails;
+  drivesData = () => {
+    let details = this.state.driveDetails;
     if (details.length === 0) {
       return (
         <tr>
@@ -212,89 +301,95 @@ class SearchStudent extends React.Component {
           <tr key={driveIndex}>
             <td>{detail.company}</td>
             <td>
-            {
-              this.state.driveEditDetail === driveIndex ? (
-              <select
-                className="ui search dropdown"
-                defaultValue={detail.round_name}
-                onChange={e => {
-                  detail.round_name = e.target.value;
-                  
-                }}
-              >
-                {this.state.rounds.map(selection => {
-                  return(<option value={selection.round_name}>{selection.round_name}</option>)
-                })}
-              </select>
-            ) : (
-              detail.round_name
-            )}
+              {
+                this.state.driveEditDetail === driveIndex ? (
+                  <select
+                    className="ui search dropdown"
+                    defaultValue={detail.round_name}
+                    onChange={e => {
+                      detail.round_name = e.target.value;
+
+                    }}
+                  >
+                    {this.state.rounds.map(selection => {
+                      return (<option value={selection.round_name}>{selection.round_name}</option>)
+                    })}
+                  </select>
+                ) : (
+                    detail.round_name
+                  )}
             </td>
             <td>
-            {this.state.driveEditDetail === driveIndex ? (
-              <select
-                className="ui search dropdown"
-                defaultValue={detail.selected}
-                onChange={e => {
-                  detail.selected = e.target.value;
+              {this.state.driveEditDetail === driveIndex ? (
+                <select
+                  className="ui search dropdown"
+                  defaultValue={detail.selected}
+                  onChange={e => {
+                    detail.selected = e.target.value;
                   }}
-              >
-                {this.state.selectionStatus.map((selection,index) => (
-                  <option key={index} value={selection}>{selection}</option>
-                ))}
-              </select>
-            ) : (
-              detail.selected
-            )}
+                >
+                  {this.state.selectionStatus.map((selection, index) => (
+                    <option key={index} value={selection}>{selection}</option>
+                  ))}
+                </select>
+              ) : (
+                  detail.selected
+                )}
             </td>
             <td>
-            {this.state.driveEditDetail === driveIndex ? (
-              <select
-                className="ui search dropdown"
-                defaultValue={detail.offer_letter}
-                onChange={e => {
-                  detail.offer_letter = e.target.value;
-                  
-                }}
-              >
-                {this.state.offerStatus.map(selection => (
-                  <option value={selection}>{selection}</option>
-                ))}
-              </select>
-            ) : (
-              detail.offer_letter
-            )}
+              {this.state.driveEditDetail === driveIndex ? (
+                <select
+                  className="ui search dropdown"
+                  defaultValue={detail.offer_letter}
+                  onChange={e => {
+                    detail.offer_letter = e.target.value;
+
+                  }}
+                >
+                  {this.state.offerStatus.map(selection => (
+                    <option value={selection}>{selection}</option>
+                  ))}
+                </select>
+              ) : (
+                  detail.offer_letter
+                )}
             </td>
-            <td>{this.driveButtonHandle(detail,driveIndex)}</td>
+            <td>{this.driveButtonHandle(detail, driveIndex)}</td>
           </tr>
         )
       })
     );
-  
+
 
   }
 
-  sendData =()=>{
+  sendData = () => {
     console.log("Send data")
-    let data = {students : [{HTNO : this.state.rollNumber}] , driveToAdd : this.state.drive_id}
+    let data = { students: [{ HTNO: this.state.rollNumber }], driveToAdd: this.state.drive_id }
 
     tnpbase
-      .post('/students/addToDrive',{data})
-      .then((res)=>{
-        console.log("Succesfully added");
-      })
-      .catch((err)=>{
+      .post('/students/addToDrive', { data })
+      .then((res) => {
+        if(res.status === 200){
+          this.setState({ submitError : false,
+          submitStatus : "Update succesfull",
+          statusCode: 1});
+          this.getStudentData();
+        }
+    })
+      .catch((err) => {
         console.log(err);
+        this.setState({ submitError: true, submitStatus: err.message });  
       })
   }
 
-  displayForm = () =>{
-    let driveMenu = this.state.drives.map((drives,index) => (
-      <option key = {index} value={drives.drive_id}>{drives.company } {new Date(drives.date_of_drive).toLocaleDateString('en-GB')}</option>
+  displayForm = () => {
+    let driveMenu = this.state.drives.map((drives, index) => (
+      <option key={index} value={drives.drive_id}>{drives.company} {new Date(drives.date_of_drive).toLocaleDateString('en-GB')}</option>
     ));
     return (
       this.state.showForm ? (
-        <div className = "ui form">
+        <div className="ui form">
           <label>Select Drive : </label>
           <select
             className="ui search dropdown"
@@ -305,38 +400,37 @@ class SearchStudent extends React.Component {
           >
             <option value="">Select Drive</option>
             {driveMenu}
-            
+
           </select>
-          <br/>
+          <br />
           <button
-              className="ui secondary button"
-              onClick={this.sendData}
-            >
-              Add
+            className="ui secondary button"
+            onClick={this.sendData}
+          >
+            Add
             </button>
           <br />
         </div>
-      
-    ) : (
-      ""
+
+      ) : (
+          ""
+        )
     )
-    )
-    
+
   }
 
   enableForm = () => {
-    
+
     tnpbase
       .get('/drives/upcoming')
-      .then((result)=>{
-        console.log("Result ikkade d : ",result.data.result);
-        this.setState({drives : result.data.result});
+      .then((result) => {
+        this.setState({ drives: result.data.result });
       })
-      .catch((err)=>{
+      .catch((err) => {
         console.log(err);
       })
     const curr = this.state.showForm;
-    this.setState({showForm : !curr});
+    this.setState({ showForm: !curr });
   }
 
   render() {
@@ -365,6 +459,12 @@ class SearchStudent extends React.Component {
             >
               Search
             </button>
+          </div>
+        </div>
+        <div className="ui container">
+          <div className="message-display">
+            <br />
+            {this.displayMessage()}
           </div>
         </div>
         <div>
@@ -401,27 +501,30 @@ class SearchStudent extends React.Component {
               <tbody>{this.drivesData()}</tbody>
             </table>
           </div>
-        </div>
-        <br/>
-        <div className="ui buttons"
-          style={{
-            float: "right",
-            verticalAlign: "middle",
-            marginBottom: "5px"
-          }}>
-          <button 
-          className = "ui secondary button "
-          onClick ={
-            this.enableForm
-          }
-          >
-            Add to Drive
+          <br />
+          <div className="ui container">
+            <div className="ui buttons"
+              style={{
+                float: "right",
+                verticalAlign: "middle",
+                marginBottom: "5px"
+              }}>
+              <button
+                className="ui secondary button "
+                onClick={
+                  this.enableForm
+                }
+              >
+                Add to Drive
           </button>
-        </div>
-        <div>
-          <br/>
-          <br/>
-          {this.displayForm()}
+            </div>
+            <div>
+              <br />
+              <br />
+              {this.displayForm()}
+            </div>
+
+          </div>
         </div>
       </div>
     );
