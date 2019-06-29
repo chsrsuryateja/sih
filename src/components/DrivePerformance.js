@@ -1,6 +1,8 @@
 import React from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import ErrorDisplay from "./ErrorDisplay";
+import SuccessMessage from "./SuccessMessage";
 import tnpbase from "../api/tnpbase";
 
 class Page extends React.Component {
@@ -13,7 +15,49 @@ class Page extends React.Component {
     values: ["P", "A"],
     selectionStatus: ["Selected", "Not Selected"],
     offerStatus: ["Submitted", "Not Submitted"],
-    detailEdit: []
+    detailEdit: [],
+    status: "",
+    loading: true,
+    error: "",
+    formSubmitted: false,
+    submitStatus: "",
+    submitError: false,
+    showMessage: false,
+    statusCode: null
+  };
+
+  displayMessage = () => {
+    if (this.state.formSubmitted) {
+      if (this.state.submitError) {
+        return (
+          <ErrorDisplay
+            message={this.state.submitStatus}
+            handleXClick={this.handleXClick}
+          />
+        );
+      } else if (this.state.showMessage) {
+        if (this.state.statusCode === 1) {
+          return (
+            <SuccessMessage
+              message={this.state.submitStatus}
+              handleXClick={this.handleXClick}
+            />
+          );
+        } else {
+          return (
+            <ErrorDisplay
+              headerData="Error!"
+              message={this.state.submitStatus}
+              handleXClick={this.handleXClick}
+            />
+          );
+        }
+      } else {
+        return <h3>Loading</h3>;
+      }
+    } else {
+      return "";
+    }
   };
 
   getDrives = dateDetail => {
@@ -45,23 +89,37 @@ class Page extends React.Component {
             };
             tnpbase
               .post("/drives/performance/editDetail", data)
-              .then(result => {
-                let ups = this.state.detailEdit;
-                ups[i].editStatus = !ups[i].editStatus;
-                ups[i].initialRoundName = this.state.studentDetails[
-                  i
-                ].round_name;
-                ups[i].initialAttendanceStatus = this.state.studentDetails[
-                  i
-                ].attendance_status;
-                ups[i].initialSelectStatus = this.state.studentDetails[
-                  i
-                ].selected;
-                ups[i].initialOfferStatus = this.state.studentDetails[
-                  i
-                ].offer_letter;
-                this.getDrives();
-                this.setState({ detailEdit: ups });
+              .then(response => {
+                if (response.status === 200) {
+                  this.setState({ showMessage: true });
+                  this.setState({
+                    submitStatus: response.data.status,
+                    statusCode: response.data.code
+                  });
+                  let ups = this.state.detailEdit;
+                  ups[i].editStatus = !ups[i].editStatus;
+                  ups[i].initialRoundName = this.state.studentDetails[
+                    i
+                  ].round_name;
+                  ups[i].initialAttendanceStatus = this.state.studentDetails[
+                    i
+                  ].attendance_status;
+                  ups[i].initialSelectStatus = this.state.studentDetails[
+                    i
+                  ].selected;
+                  ups[i].initialOfferStatus = this.state.studentDetails[
+                    i
+                  ].offer_letter;
+                  this.getDrives();
+                  this.setState({ detailEdit: ups });
+                } else {
+                  this.setState({ submitError: true });
+                  this.setState({ submitStatus: "Unable to send data to API" });
+                }
+              })
+              .catch(error => {
+                this.setState({ submitError: true });
+                this.setState({ submitStatus: error.message });
               });
           }}
         >
@@ -100,7 +158,44 @@ class Page extends React.Component {
       </div>
     );
 
-  tableData = () => {
+  showData = () => {
+    let data = {
+      drive_id: this.state.drive_id
+    };
+    tnpbase
+      .post("/drives/performance/driveDetails", data)
+      .then(response => {
+        if (response.status === 200) {
+          console.log("Fetching Data");
+          for (let i = 0; i < response.data.students.length; i++) {
+            this.state.detailEdit.push({
+              editStatus: false,
+              initialRoundName: response.data.students[i].round_name,
+              initialAttendanceStatus:
+                response.data.students[i].attendance_status,
+              initialSelectStatus: response.data.students[i].selected,
+              initialOfferStatus: response.data.students[i].offer_letter
+            });
+          }
+          this.setState({
+            studentDetails: response.data.students,
+            rounds: response.data.rounds
+          });
+          this.setState({ showMessage: true });
+          this.setState({
+            submitStatus: response.data.status,
+            statusCode: response.data.code
+          });
+        } else {
+          this.setState({ submitError: true });
+          this.setState({ submitStatus: "Unable to send data to API" });
+        }
+      })
+      .catch(err => {
+        this.setState({ submitError: true });
+        this.setState({ submitStatus: err.message });
+        console.log(err);
+      });
     if (this.state.studentDetails.length === 0) {
       return (
         <tr>
@@ -185,38 +280,24 @@ class Page extends React.Component {
       );
     });
   };
-  enableTable = () => {
-    let data = {
-      drive_id: this.state.drive_id
-    };
-    tnpbase
-      .post("/drives/performance/driveDetails", data)
-      .then(response => {
-        console.log("Fetching Data" , response.data);
-        for (let i = 0; i < response.data.students.length; i++) {
-          this.state.detailEdit.push({
-            editStatus: false,
-            initialRoundName: response.data.students[i].round_name,
-            initialAttendanceStatus:
-              response.data.students[i].attendance_status,
-            initialSelectStatus: response.data.students[i].selected,
-            initialOfferStatus: response.data.students[i].offer_letter
-          });
-        }
-        this.setState({
-          studentDetails: response.data.students,
-          rounds: response.data.rounds
-        });
-      })
-      .catch(err => {
-        console.log(err);
-      });
+
+  tableData = () => {
+    return this.state.formSubmitted ? this.showData() : "";
   };
+
+  handleXClick = e => {
+    this.setState({ showMessage: false, formSubmitted: false });
+  };
+
+  enableTable = () => {
+    let toggle = !this.state.formSubmitted;
+    this.setState({ formSubmitted: toggle });
+  };
+
   render() {
     let driveMenu = this.state.drives.map(drives => (
       <option value={drives.drive_id}>{drives.company}</option>
     ));
-
     return (
       <div>
         <div className="ui container">
@@ -227,36 +308,38 @@ class Page extends React.Component {
               <div className="sub header">Student Performance</div>
             </div>
           </h3>
-        
-        <div className="ui form">
-          <label>Select Date :</label>
-          <br/>
-          <DatePicker
-            dateFormat="dd/MM/yyyy"
-            selected={this.state.date}
-            onChange={dateDetail => {
-              this.getDrives(dateDetail);
-              this.setState({ date: dateDetail });
-            }}
-          />
-          <br />
-          <label>Select Drive : </label>
-          <select
-            className="ui search dropdown"
-            value={this.state.drive_id}
-            onChange={e => {
-              this.setState({ drive_id: e.target.value });
-            }}
-          >
-            <option value="">Select Drive</option>
-            {driveMenu}
-          </select>
-          <br />
-          <button className="ui button" onClick={this.enableTable}>
-            <i className="check icon" />
-          </button>
+
+          <div className="ui form">
+            <label>Select Date :</label>
+            <br />
+            <DatePicker
+              dateFormat="dd/MM/yyyy"
+              selected={this.state.date}
+              onChange={dateDetail => {
+                this.getDrives(dateDetail);
+                this.setState({ date: dateDetail });
+              }}
+            />
+            <br />
+            <label>Select Drive : </label>
+            <select
+              className="ui search dropdown"
+              value={this.state.drive_id}
+              onChange={e => {
+                this.setState({ drive_id: e.target.value });
+              }}
+            >
+              <option value="">Select Drive</option>
+              {driveMenu}
+            </select>
+            <br />
+            <button className="ui button" onClick={this.enableTable}>
+              <i className="check icon" />
+            </button>
+          </div>
         </div>
-        </div>
+        <br />
+        <div className="message-display">{this.displayMessage()}</div>
         <div>
           <br />
           <div className="ui container">
