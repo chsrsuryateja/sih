@@ -10,7 +10,7 @@ class SearchStudent extends React.Component {
     driveContent : [],
     rounds : [],
     drives :[],
-    drive_id :[],
+    drive_id :"",
     personalDetails: [],
     selectionStatus: ["Selected", "Not Selected"],
     offerStatus: ["Submitted", "Not Submitted"],
@@ -56,14 +56,12 @@ class SearchStudent extends React.Component {
             className="ui  button"
             style={{ margin: "5px" }}
             onClick={() => {
-              console.log("submit" , this.state.content);
               let ups = this.state.personalDetails;
               ups[detail] = this.state.content;
               tnpbase 
                 .post('/student/editDetail',ups)
                 .then(()=>{
                   this.getStudentData();
-                  console.log("Succesfull");
                   this.setState({editDetail : -1})
                 })
                 .catch((err)=>{console.log(err)})
@@ -102,7 +100,7 @@ class SearchStudent extends React.Component {
   contentHandle = (data , contentIndex ) =>{
     return(
       this.state.editDetail === contentIndex ? (
-        <div class="ui input">
+        <div className="ui input">
         <input
           type="text"
           value={this.state.content}
@@ -120,8 +118,6 @@ class SearchStudent extends React.Component {
   }
 
   personalData = () => {
-    // this.state.personalDetails = { "htno": "17a31a0534", "haha": "adwew" };
-
     if (this.state.personalDetails.length === 0) {
       return (
         <tr>
@@ -146,6 +142,7 @@ class SearchStudent extends React.Component {
   }
 
   driveButtonHandle = (detail,driveIndex) =>{
+
       return(
         this.state.driveEditDetail === driveIndex ? (
           <div className="ui basic icon buttons">
@@ -153,11 +150,12 @@ class SearchStudent extends React.Component {
             className="ui  button"
             style={{ margin: "5px" }}
             onClick={() => {
-              console.log("submit" , detail);
               let ups = this.state.driveDetails;
               ups[driveIndex] = detail;
+
+              const data = {ups, HTNO : this.state.rollNumber}
               tnpbase 
-                .post('search/student/driveEditDetail',ups)
+                .post('search/student/driveEditDetail',data)
                 .then(()=>{
                   this.getStudentData();
                   console.log("Succesfull");
@@ -171,7 +169,7 @@ class SearchStudent extends React.Component {
           <button
             className="ui button"
             onClick={() => {
-              console.log("Abort" , detail);
+              console.log("Abort");
 
               this.setState({driveEditDetail : -1 , driveContent : detail})
             }}
@@ -185,8 +183,8 @@ class SearchStudent extends React.Component {
               className="ui  secondary button"
               style={{ margin: "5px" }}
               onClick={() => {
-                console.log(driveIndex , detail);
-                this.setState({ driveEditDetail: driveIndex, driveContent:detail });
+                this.getRounds(detail.company);
+                this.setState({ driveEditDetail : driveIndex, driveContent:detail });
               }}
             >
               <i className="pencil alternate icon" />
@@ -210,7 +208,6 @@ class SearchStudent extends React.Component {
     }
     return (
       details.map((detail, driveIndex) => {
-        this.getRounds(detail.company);
         return (
           <tr key={driveIndex}>
             <td>{detail.company}</td>
@@ -222,12 +219,12 @@ class SearchStudent extends React.Component {
                 defaultValue={detail.round_name}
                 onChange={e => {
                   detail.round_name = e.target.value;
-                  console.log(detail);
+                  
                 }}
               >
-                {this.state.rounds.map(selection => (
-                  <option value={selection}>{selection}</option>
-                ))}
+                {this.state.rounds.map(selection => {
+                  return(<option value={selection.round_name}>{selection.round_name}</option>)
+                })}
               </select>
             ) : (
               detail.round_name
@@ -240,11 +237,10 @@ class SearchStudent extends React.Component {
                 defaultValue={detail.selected}
                 onChange={e => {
                   detail.selected = e.target.value;
-                  console.log(detail);
-                }}
+                  }}
               >
-                {this.state.selectionStatus.map(selection => (
-                  <option value={selection}>{selection}</option>
+                {this.state.selectionStatus.map((selection,index) => (
+                  <option key={index} value={selection}>{selection}</option>
                 ))}
               </select>
             ) : (
@@ -258,7 +254,7 @@ class SearchStudent extends React.Component {
                 defaultValue={detail.offer_letter}
                 onChange={e => {
                   detail.offer_letter = e.target.value;
-                  console.log(detail);
+                  
                 }}
               >
                 {this.state.offerStatus.map(selection => (
@@ -279,9 +275,11 @@ class SearchStudent extends React.Component {
   }
 
   sendData =()=>{
-    let data = {HTNO : this.state.rollNumber , drive_id : this.state.drive_id}
+    console.log("Send data")
+    let data = {students : [{HTNO : this.state.rollNumber}] , driveToAdd : this.state.drive_id}
+
     tnpbase
-      .post('/drives/addStudent',data)
+      .post('/students/addToDrive',{data})
       .then((res)=>{
         console.log("Succesfully added");
       })
@@ -291,8 +289,8 @@ class SearchStudent extends React.Component {
   }
 
   displayForm = () =>{
-    let driveMenu = this.state.drives.map(drives => (
-      <option value={drives.drive_id}>{drives.company}</option>
+    let driveMenu = this.state.drives.map((drives,index) => (
+      <option key = {index} value={drives.drive_id}>{drives.company } {new Date(drives.date_of_drive).toLocaleDateString('en-GB')}</option>
     ));
     return (
       this.state.showForm ? (
@@ -311,7 +309,7 @@ class SearchStudent extends React.Component {
           </select>
           <br/>
           <button
-              class="ui secondary button"
+              className="ui secondary button"
               onClick={this.sendData}
             >
               Add
@@ -327,10 +325,12 @@ class SearchStudent extends React.Component {
   }
 
   enableForm = () => {
+    
     tnpbase
-      .get('/drives/details')
+      .get('/drives/upcoming')
       .then((result)=>{
-        this.setState({drives : result.data});
+        console.log("Result ikkade d : ",result.data.result);
+        this.setState({drives : result.data.result});
       })
       .catch((err)=>{
         console.log(err);
@@ -350,7 +350,7 @@ class SearchStudent extends React.Component {
               <div className="sub header">Details of Student</div>
             </div>
           </h3>
-          <div class="ui action input">
+          <div className="ui action input">
             <input
               type="text"
               placeholder="Enter roll no."
@@ -360,7 +360,7 @@ class SearchStudent extends React.Component {
               }}
             />
             <button
-              class="ui secondary button"
+              className="ui secondary button"
               onClick={this.getStudentData}
             >
               Search
