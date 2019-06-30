@@ -1,7 +1,7 @@
 import React from "react";
 import tnpbase from "../api/tnpbase";
-import ErrorDisplay from "./ErrorDisplay";
-import SuccessMessage from "./SuccessMessage";
+import ErrorDisplay from "./ui_utils/ErrorDisplay";
+import SuccessMessage from "./ui_utils/SuccessMessage";
 
 class SearchStudent extends React.Component {
   state = {

@@ -1,8 +1,8 @@
 import React from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import ErrorDisplay from "./ErrorDisplay";
-import SuccessMessage from "./SuccessMessage";
+import ErrorDisplay from "./ui_utils/ErrorDisplay";
+import SuccessMessage from "./ui_utils/SuccessMessage";
 import tnpbase from "../api/tnpbase";
 
 class Page extends React.Component {
