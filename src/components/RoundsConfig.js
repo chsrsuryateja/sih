@@ -7,7 +7,6 @@ class RoundsConfig extends React.Component {
   state = { showForm: false, round: "" };
 
   addRound = () => {
-    console.log(typeof {data:this.state.round});
     tnpbase
       .post("/round/add", { data: this.state.round })
       .then((res) => {
@@ -18,7 +17,6 @@ class RoundsConfig extends React.Component {
   };
 
   deleteRound = data => {
-    console.log(data);
     tnpbase
       .post("/rounds/delete",data)
       .then(() => this.props.fetchRounds())

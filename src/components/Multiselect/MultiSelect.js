@@ -48,23 +48,23 @@ export class Multiselect extends Component {
     }
   }
 
-  chipVal = (data) => {
-    switch(data) {
-      case "5": return("CSE");
-      case "12": return("IT");
-      case "4": return("ECE");
-      case "3": return("MECH");
-      case "1": return("CIVIL");
-      case "2": return("EEE");
-      default: return("Unknown");
-    }
-  }
+  // chipVal = (data) => {
+  //   switch(data) {
+  //     case "5": return("CSE");
+  //     case "12": return("IT");
+  //     case "4": return("ECE");
+  //     case "3": return("MECH");
+  //     case "1": return("CIVIL");
+  //     case "2": return("EEE");
+  //     default: return("Unknown");
+  //   }
+  // }
   returnChip() {
     const chip = this.state.checked
       ? this.state.checked.map((data, index) => (
           <div className="chip-body-tnp" key={index}>
             <p className="chip-text-tnp">{
-             this.chipVal(data)
+             data
             }</p>
             <button
               className="chip-close-tnp"
@@ -85,7 +85,7 @@ export class Multiselect extends Component {
             <input
               type="checkbox"
               value={data.value}
-              onChange={e => this.checkBox(e.target.value, e.target.checked)}
+              onChange={e => {this.checkBox( e.target.value, e.target.checked)}}
               checked={this.state.checked.includes(data.value) ? true : false}
             />
             <span className="checkmark-tnp" />

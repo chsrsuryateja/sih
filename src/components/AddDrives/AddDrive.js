@@ -45,6 +45,7 @@ class AddDrive extends React.Component {
       .catch(err => {
         console.log(err);
         this.setState({
+          submitted: true,
           loading: false,
           error: "Unable to add drive",
           message: err.message

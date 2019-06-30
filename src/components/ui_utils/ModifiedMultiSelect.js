@@ -16,7 +16,6 @@ export const ModifiedMultiSelect = ({
   meta,
   data
 }) => {
-  const modifiedInput = { ...input, onChange: null, name: undefined };
   const showError = renderError(meta);
   return (
     <div

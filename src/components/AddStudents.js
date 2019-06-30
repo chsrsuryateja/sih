@@ -29,9 +29,21 @@ const displayStatus = props => {
     if (props.loading) {
       return <h1>Loading</h1>;
     } else if (props.error !== "") {
-      return <ErrorDisplay headerData={props.error} message={props.message} showTry={false} handleXClick={props.handleXClick} />;
+      return (
+        <ErrorDisplay
+          headerData={props.error}
+          message={props.message}
+          showTry={false}
+          handleXClick={props.handleXClick}
+        />
+      );
     } else {
-      return <SuccessMessage message={props.message} handleXClick={props.handleXClick} />;
+      return (
+        <SuccessMessage
+          message={props.message}
+          handleXClick={props.handleXClick}
+        />
+      );
     }
   }
 };
@@ -48,7 +60,7 @@ const AddStudents = props => {
           <FileUpload />
         </div>
         <div className="eight wide column">
-          <div style={{ overflowY: "scroll", height: "24em" }}>
+          <div style={{ overflowY: "scroll", height: "19em" }}>
             <h3 className="ui header">Selected File(s):</h3>
             <div className="ui middle aligned divided list">
               <p style={{ textAlign: "center" }}>
@@ -70,10 +82,7 @@ const AddStudents = props => {
             <i className="upload icon" />
             Upload
           </button>
-         <div style={{marginTop: "55px"}}>
-         {displayStatus(props)}
-         </div>
-
+          <div style={{ marginTop: "55px" }}>{displayStatus(props)}</div>
         </div>
       </div>
     </div>

@@ -9,13 +9,14 @@ import {
 } from "../../actions";
 
 class DriveView extends React.Component {
+  state = { drives: [] };
   deleteRound = (drive_id, round_id, noOfRounds, driveYear) => {
     const data = { drive_id, round_id, noOfRounds };
     tnpbase
       .post("/drives/rounds/delete", { data })
       .then(res => {
         if (res.status === 200) {
-          this.props.fetchDrives(driveYear);
+          this.getDrives(driveYear);
         } else {
           window.alert(`Error: ${res.data.status} \n ${res.data.error}`);
         }
@@ -23,12 +24,56 @@ class DriveView extends React.Component {
       .catch(err => window.alert(`Error: ${err.message}`));
   };
 
+  getDrives = year => {
+    if (year === "upcoming") {
+      tnpbase
+        .get("/drives/upcoming")
+        .then(res => {
+          if (res.status === 200) {
+            if (res.data.result.length === 0) {
+              this.setState({drives: res.data.result});
+              window.alert("No upcoming drives");
+            } else if (res.data.result.length !== 0) {
+              this.setState({
+                drives: res.data.result
+              });
+            }
+          } else {
+            window.alert(`Error: ${res.data.status} \n ${res.data.error}`);
+          }
+        })
+        .catch(err => {
+          window.alert(`Error: ${err}`);
+        });
+    } else {
+      tnpbase
+        .post("/drives/olddrive", { data: year })
+        .then(res => {
+          if (res.status === 200) {
+            if (res.data.result.length === 0) {
+              this.setState({drives: res.data.result});
+              window.alert("No drives");
+            } else if (res.data.result.length !== 0) {
+              this.setState({
+                drives: res.data.result
+              });
+            }
+          } else {
+            window.alert(`Error: ${res.data.status} \n ${res.data.error}`);
+          }
+        })
+        .catch(err => {
+          window.alert(`Error: ${err}`);
+        });
+    }
+  };
+
   deleteDrive = (drive, driveYear) => {
     tnpbase
       .post("/drives/delete", { data: drive })
       .then(res => {
         if (res.status === 200) {
-          this.props.fetchDrives(driveYear);
+          this.getDrives(driveYear);
         } else {
           window.alert(`Error: ${res.data.status} \n ${res.data.error}`);
         }
@@ -54,9 +99,9 @@ class DriveView extends React.Component {
     };
     tnpbase
       .post("/drives/modify", { data })
-      .then((res) => {
+      .then(res => {
         if (res.status === 200) {
-          this.props.fetchDrives(year);
+          this.getDrives(year);
           this.props.setAddRoundAction(-1);
           this.props.setEditDriveAction(-1);
         } else {
@@ -72,6 +117,8 @@ class DriveView extends React.Component {
           deleteRound={this.deleteRound}
           submitData={this.submitData}
           deleteDrive={this.deleteDrive}
+          drives={this.state.drives}
+          fetchDrives={this.getDrives}
         />
       </div>
     );

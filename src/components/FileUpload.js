@@ -12,7 +12,7 @@ class FileUpload extends React.Component {
       <div >
         <Files
           style={{
-            height: "400px",
+            height: "350px",
             width: "80%",
             marginLeft: "10%",
             marginRight: "10%",

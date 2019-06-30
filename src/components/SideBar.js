@@ -14,7 +14,10 @@ const SideBar = props => {
           <i className="close icon " />
         </button>
       </div>
-      <div className="item">
+      <div
+        className="item"
+        style={{ display: props.userRole === "PCO" ? "none" : "" }}
+      >
         <div className="header">Student Details</div>
         <div className="menu">
           <Link to="/students/add" className="item">
@@ -34,10 +37,18 @@ const SideBar = props => {
           <Link to="/drives/view" className="item">
             View Drives
           </Link>
-          <Link to="/drives/add" className="item">
+          <Link
+            to="/drives/add"
+            className="item"
+            style={{ display: props.userRole === "PCO" ? "none" : "" }}
+          >
             Add Drive
           </Link>
-          <Link to="/rounds/config" className="item">
+          <Link
+            to="/rounds/config"
+            className="item"
+            style={{ display: props.userRole === "PCO" ? "none" : "" }}
+          >
             Rounds Configuration
           </Link>
         </div>
@@ -45,9 +56,6 @@ const SideBar = props => {
       <div className="item">
         <div className="header">Drive Reports</div>
         <div className="menu">
-          <Link to="/drives/attendance" className="item">
-            Attendance
-          </Link>
           <Link to="/drives/performance" className="item">
             Student Performance in Drive
           </Link>
@@ -56,7 +64,11 @@ const SideBar = props => {
       <div className="item">
         <div className="header">Training Tests</div>
         <div className="menu">
-          <Link to="/tests/new" className="item">
+          <Link
+            to="/tests/new"
+            className="item"
+            style={{ display: props.userRole === "PCO" ? "none" : "" }}
+          >
             New Test
           </Link>
           <Link to="/tests/performance" className="item">
@@ -64,13 +76,21 @@ const SideBar = props => {
           </Link>
         </div>
       </div>
-      <div className="item">
+      <div
+        className="item"
+        style={{ display: props.userRole === "ADMIN" ? "" : "none" }}
+      >
         <div className="header">Support</div>
         <div className="menu">
-          {/* eslint-disable-next-line*/}
-          <a className="item" href="#">
-            E-mail Support
-          </a>
+          <Link to="/user/add" className="item">
+            Add User
+          </Link>
+          <Link to="/user/reset" className="item">
+            Reset Password
+          </Link>
+          <Link to="/user/delete" className="item">
+            Delete Users
+          </Link>
         </div>
       </div>
     </div>
