@@ -364,9 +364,9 @@ class SearchStudent extends React.Component {
   }
 
   sendData = () => {
-    console.log("Send data")
-    let data = { students: [{ HTNO: this.state.rollNumber }], driveToAdd: this.state.drive_id }
-
+    
+    let data = { students: [{ HTNO: this.state.personalDetails.HTNO }], driveToAdd: this.state.drive_id }
+    console.log(data);
     tnpbase
       .post('/students/addToDrive', { data })
       .then((res) => {
@@ -434,6 +434,7 @@ class SearchStudent extends React.Component {
   }
 
   render() {
+    
     return (
       <div>
         <div className="ui container">

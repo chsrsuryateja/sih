@@ -110,7 +110,7 @@ class Page extends React.Component {
                   ups[i].initialOfferStatus = this.state.studentDetails[
                     i
                   ].offer_letter;
-                  this.getDrives();
+                  this.getDrives(this.state.date);
                   this.setState({ detailEdit: ups });
                 } else {
                   this.setState({ submitError: true });
@@ -158,44 +158,47 @@ class Page extends React.Component {
       </div>
     );
 
-  showData = () => {
-    let data = {
-      drive_id: this.state.drive_id
-    };
-    tnpbase
-      .post("/drives/performance/driveDetails", data)
-      .then(response => {
-        if (response.status === 200) {
-          console.log("Fetching Data");
-          for (let i = 0; i < response.data.students.length; i++) {
-            this.state.detailEdit.push({
-              editStatus: false,
-              initialRoundName: response.data.students[i].round_name,
-              initialAttendanceStatus:
-                response.data.students[i].attendance_status,
-              initialSelectStatus: response.data.students[i].selected,
-              initialOfferStatus: response.data.students[i].offer_letter
+    getDriveData = () =>{
+      let data = {
+        drive_id: this.state.drive_id
+      };
+      tnpbase
+        .post("/drives/performance/driveDetails", data)
+        .then(response => {
+          if (response.status === 200) {
+            console.log("Fetching Data",this.state);
+            for (let i = 0; i < response.data.students.length; i++) {
+              this.state.detailEdit.push({
+                editStatus: false,
+                initialRoundName: response.data.students[i].round_name,
+                initialAttendanceStatus:
+                  response.data.students[i].attendance_status,
+                initialSelectStatus: response.data.students[i].selected,
+                initialOfferStatus: response.data.students[i].offer_letter
+              });
+            }
+            this.setState({
+              studentDetails: response.data.students,
+              rounds: response.data.rounds
             });
+            this.setState({ showMessage: true });
+            this.setState({
+              submitStatus: response.data.status,
+              statusCode: response.data.code
+            });
+          } else {
+            this.setState({ submitError: true });
+            this.setState({ submitStatus: "Unable to send data to API" });
           }
-          this.setState({
-            studentDetails: response.data.students,
-            rounds: response.data.rounds
-          });
-          this.setState({ showMessage: true });
-          this.setState({
-            submitStatus: response.data.status,
-            statusCode: response.data.code
-          });
-        } else {
+        })
+        .catch(err => {
           this.setState({ submitError: true });
-          this.setState({ submitStatus: "Unable to send data to API" });
-        }
-      })
-      .catch(err => {
-        this.setState({ submitError: true });
-        this.setState({ submitStatus: err.message });
-        console.log(err);
-      });
+          this.setState({ submitStatus: err.message });
+          console.log(err);
+        });
+    }
+
+  showData = () => {
     if (this.state.studentDetails.length === 0) {
       return (
         <tr>
@@ -216,8 +219,8 @@ class Page extends React.Component {
                   number.round_name = e.target.value;
                 }}
               >
-                {this.state.rounds.map(round => (
-                  <option value={round.round_name}>{round.round_name}</option>
+                {this.state.rounds.map((round,index )=> (
+                  <option key={index} value={round.round_name}>{round.round_name}</option>
                 ))}
               </select>
             ) : (
@@ -233,8 +236,8 @@ class Page extends React.Component {
                   number.attendance_status = e.target.value;
                 }}
               >
-                {this.state.values.map(status => (
-                  <option value={status}>{status}</option>
+                {this.state.values.map((status,index )=> (
+                  <option key={index}   value={status}>{status}</option>
                 ))}
               </select>
             ) : (
@@ -250,8 +253,8 @@ class Page extends React.Component {
                   number.selected = e.target.value;
                 }}
               >
-                {this.state.selectionStatus.map(selection => (
-                  <option value={selection}>{selection}</option>
+                {this.state.selectionStatus.map((selection,index) => (
+                  <option key={index}   value={selection}>{selection}</option>
                 ))}
               </select>
             ) : (
@@ -267,8 +270,8 @@ class Page extends React.Component {
                   number.offer_letter = e.target.value;
                 }}
               >
-                {this.state.offerStatus.map(selection => (
-                  <option value={selection}>{selection}</option>
+                {this.state.offerStatus.map((selection,index) => (
+                  <option key={index}   value={selection}>{selection}</option>
                 ))}
               </select>
             ) : (
@@ -286,17 +289,16 @@ class Page extends React.Component {
   };
 
   handleXClick = e => {
-    this.setState({ showMessage: false, formSubmitted: false });
+    this.setState({ showMessage: false });
   };
 
   enableTable = () => {
-    let toggle = !this.state.formSubmitted;
-    this.setState({ formSubmitted: toggle });
+    this.setState({ formSubmitted: true });
   };
 
   render() {
-    let driveMenu = this.state.drives.map(drives => (
-      <option value={drives.drive_id}>{drives.company}</option>
+    let driveMenu = this.state.drives.map((drives,index) => (
+      <option key={index}  value={drives.drive_id}>{drives.company}</option>
     ));
     return (
       <div>
@@ -333,7 +335,11 @@ class Page extends React.Component {
               {driveMenu}
             </select>
             <br />
-            <button className="ui button" onClick={this.enableTable}>
+            <button className="ui button" onClick={()=>{
+              this.getDriveData()
+              this.enableTable()
+              
+              }}>
               <i className="check icon" />
             </button>
           </div>
