@@ -1,9 +1,9 @@
 import React from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import ErrorDisplay from "./ui_utils/ErrorDisplay";
-import SuccessMessage from "./ui_utils/SuccessMessage";
 import tnpbase from "../api/tnpbase";
+import ErrorDisplay from './ui_utils/ErrorDisplay';
+import SuccessMessage from './ui_utils/SuccessMessage'
 
 class Page extends React.Component {
   state = {
@@ -13,59 +13,79 @@ class Page extends React.Component {
     date: null,
     studentDetails: [],
     values: ["P", "A"],
+    showMessage: false,
     selectionStatus: ["Selected", "Not Selected"],
     offerStatus: ["Submitted", "Not Submitted"],
     detailEdit: [],
-    status: "",
-    loading: true,
+    loading: false,
     error: "",
-    formSubmitted: false,
-    submitStatus: "",
-    submitError: false,
-    showMessage: false,
-    statusCode: null
+    message: "",
+    submitted: false
   };
 
-  displayMessage = () => {
-    if (this.state.formSubmitted) {
-      if (this.state.submitError) {
-        return (
-          <ErrorDisplay
-            message={this.state.submitStatus}
-            handleXClick={this.handleXClick}
-          />
-        );
-      } else if (this.state.showMessage) {
-        if (this.state.statusCode === 1) {
-          return (
-            <SuccessMessage
-              message={this.state.submitStatus}
-              handleXClick={this.handleXClick}
-            />
-          );
+  getDriveData = () => {
+    let data = {
+      drive_id: this.state.drive_id
+    };
+    tnpbase
+      .post("/drives/performance/driveDetails", data)
+      .then(response => {
+        this.setState({submitted : true,loading : true});
+        if (response.status === 200) {
+          if (response.data.result.length !== 0) {
+            console.log("Fetching Data");
+            for (let i = 0; i < response.data.result.students.length; i++) {
+              this.state.detailEdit.push({
+                editStatus: false,
+                initialRoundName: response.data.result.students[i].round_name,
+                initialAttendanceStatus:
+                  response.data.result.students[i].attendance_status,
+                initialSelectStatus: response.data.result.students[i].selected,
+                initialOfferStatus: response.data.result.students[i].offer_letter
+              });
+            }
+            this.setState({
+              studentDetails: response.data.result.students,
+              rounds: response.data.result.rounds,
+              loading : false,
+              message : response.data.status,
+              error : ""
+            });
+          } else {
+            this.setState({studentDetails : [], rounds : [] , loading : false , error : response.data.status, message : response.data.error});
+          }
         } else {
-          return (
-            <ErrorDisplay
-              headerData="Error!"
-              message={this.state.submitStatus}
-              handleXClick={this.handleXClick}
-            />
-          );
+          this.setState({
+            loading : false,
+            error : response.data.status,
+            message : response.data.error
+          });
         }
-      } else {
-        return <h3>Loading</h3>;
-      }
-    } else {
-      return "";
-    }
+        
+      })
+      .catch(err => {
+        console.log(err);
+        this.setState({
+          submitted:true,
+          loading : false,
+          message : err.message,
+          error : "Unable to send data"
+        });
+      });
   };
 
   getDrives = dateDetail => {
     const data = { date: new Date(dateDetail).toLocaleDateString("en-GB") };
     tnpbase
-      .post("/drives/drivesList", data)
+      .post("/drives/drivesList", { data })
       .then(response => {
-        this.setState({ drives: response.data });
+        if (response.status === 200) {
+          if (response.data.result.length !== 0) {
+            this.setState({ drives: response.data.result });
+          } else {
+            window.alert(`No drives`)
+          }
+        }
       })
       .catch(err => {
         console.log(err);
@@ -89,37 +109,24 @@ class Page extends React.Component {
             };
             tnpbase
               .post("/drives/performance/editDetail", data)
-              .then(response => {
-                if (response.status === 200) {
-                  this.setState({ showMessage: true });
-                  this.setState({
-                    submitStatus: response.data.status,
-                    statusCode: response.data.code
-                  });
-                  let ups = this.state.detailEdit;
-                  ups[i].editStatus = !ups[i].editStatus;
-                  ups[i].initialRoundName = this.state.studentDetails[
-                    i
-                  ].round_name;
-                  ups[i].initialAttendanceStatus = this.state.studentDetails[
-                    i
-                  ].attendance_status;
-                  ups[i].initialSelectStatus = this.state.studentDetails[
-                    i
-                  ].selected;
-                  ups[i].initialOfferStatus = this.state.studentDetails[
-                    i
-                  ].offer_letter;
-                  this.getDrives(this.state.date);
-                  this.setState({ detailEdit: ups });
-                } else {
-                  this.setState({ submitError: true });
-                  this.setState({ submitStatus: "Unable to send data to API" });
-                }
-              })
-              .catch(error => {
-                this.setState({ submitError: true });
-                this.setState({ submitStatus: error.message });
+              .then(result => {
+                let ups = this.state.detailEdit;
+                ups[i].editStatus = !ups[i].editStatus;
+                ups[i].initialRoundName = this.state.studentDetails[
+                  i
+                ].round_name;
+                ups[i].initialAttendanceStatus = this.state.studentDetails[
+                  i
+                ].attendance_status;
+                ups[i].initialSelectStatus = this.state.studentDetails[
+                  i
+                ].selected;
+                ups[i].initialOfferStatus = this.state.studentDetails[
+                  i
+                ].offer_letter;
+                this.getDrives(this.state.date);
+                this.setState({ detailEdit: ups });
+                window.alert('Submit successfull');
               });
           }}
         >
@@ -142,63 +149,44 @@ class Page extends React.Component {
         </button>
       </div>
     ) : (
-      <div>
-        <button
-          className="ui  secondary button"
-          style={{ margin: "5px" }}
-          onClick={() => {
-            let ups = this.state.detailEdit;
-            ups[i].editStatus = !ups[i].editStatus;
-            this.setState({ detailEdit: ups });
-          }}
-        >
-          <i className="pencil alternate icon" />
-          Edit
+        <div>
+          <button
+            className="ui  secondary button"
+            style={{ margin: "5px" }}
+            onClick={() => {
+              let ups = this.state.detailEdit;
+              ups[i].editStatus = !ups[i].editStatus;
+              this.setState({ detailEdit: ups });
+            }}
+          >
+            <i className="pencil alternate icon" />
+            Edit
         </button>
-      </div>
-    );
+        </div>
+      );
 
-    getDriveData = () =>{
-      let data = {
-        drive_id: this.state.drive_id
-      };
-      tnpbase
-        .post("/drives/performance/driveDetails", data)
-        .then(response => {
-          if (response.status === 200) {
-            console.log("Fetching Data",this.state);
-            for (let i = 0; i < response.data.students.length; i++) {
-              this.state.detailEdit.push({
-                editStatus: false,
-                initialRoundName: response.data.students[i].round_name,
-                initialAttendanceStatus:
-                  response.data.students[i].attendance_status,
-                initialSelectStatus: response.data.students[i].selected,
-                initialOfferStatus: response.data.students[i].offer_letter
-              });
-            }
-            this.setState({
-              studentDetails: response.data.students,
-              rounds: response.data.rounds
-            });
-            this.setState({ showMessage: true });
-            this.setState({
-              submitStatus: response.data.status,
-              statusCode: response.data.code
-            });
-          } else {
-            this.setState({ submitError: true });
-            this.setState({ submitStatus: "Unable to send data to API" });
-          }
-        })
-        .catch(err => {
-          this.setState({ submitError: true });
-          this.setState({ submitStatus: err.message });
-          console.log(err);
-        });
+  handleXClick = () => {
+    this.setState({ submitted: false });
+  };
+
+  displayMessage = () => {
+    if (this.state.submitted) {
+      if (this.state.loading) {
+        return <h1>Loading</h1>
+      } else if (this.state.error !== "") {  
+        return (
+          <ErrorDisplay
+            headerData={this.state.error}
+            message={this.state.message}
+            showTry={false}
+            handleXclick={this.handleXclick}
+          />
+        );
+      }
     }
+  }
 
-  showData = () => {
+  tableData = () => {
     if (this.state.studentDetails.length === 0) {
       return (
         <tr>
@@ -219,13 +207,13 @@ class Page extends React.Component {
                   number.round_name = e.target.value;
                 }}
               >
-                {this.state.rounds.map((round,index )=> (
-                  <option key={index} value={round.round_name}>{round.round_name}</option>
+                {this.state.rounds.map(round => (
+                  <option value={round.round_name}>{round.round_name}</option>
                 ))}
               </select>
             ) : (
-              number.round_name
-            )}
+                number.round_name
+              )}
           </td>
           <td>
             {this.state.detailEdit[i].editStatus ? (
@@ -236,13 +224,13 @@ class Page extends React.Component {
                   number.attendance_status = e.target.value;
                 }}
               >
-                {this.state.values.map((status,index )=> (
-                  <option key={index}   value={status}>{status}</option>
+                {this.state.values.map(status => (
+                  <option value={status}>{status}</option>
                 ))}
               </select>
             ) : (
-              number.attendance_status
-            )}
+                number.attendance_status
+              )}
           </td>
           <td>
             {this.state.detailEdit[i].editStatus ? (
@@ -253,13 +241,13 @@ class Page extends React.Component {
                   number.selected = e.target.value;
                 }}
               >
-                {this.state.selectionStatus.map((selection,index) => (
-                  <option key={index}   value={selection}>{selection}</option>
+                {this.state.selectionStatus.map(selection => (
+                  <option value={selection}>{selection}</option>
                 ))}
               </select>
             ) : (
-              number.selected
-            )}
+                number.selected
+              )}
           </td>
           <td>
             {this.state.detailEdit[i].editStatus ? (
@@ -270,13 +258,13 @@ class Page extends React.Component {
                   number.offer_letter = e.target.value;
                 }}
               >
-                {this.state.offerStatus.map((selection,index) => (
-                  <option key={index}   value={selection}>{selection}</option>
+                {this.state.offerStatus.map(selection => (
+                  <option value={selection}>{selection}</option>
                 ))}
               </select>
             ) : (
-              number.offer_letter
-            )}
+                number.offer_letter
+              )}
           </td>
           <td>{this.buttonHandle(i)}</td>
         </tr>
@@ -284,22 +272,15 @@ class Page extends React.Component {
     });
   };
 
-  tableData = () => {
-    return this.state.formSubmitted ? this.showData() : "";
-  };
-
-  handleXClick = e => {
-    this.setState({ showMessage: false });
-  };
-
-  enableTable = () => {
-    this.setState({ formSubmitted: true });
-  };
+  enableTable = () =>{
+    this.setState({showMessage: true})
+  }
 
   render() {
-    let driveMenu = this.state.drives.map((drives,index) => (
-      <option key={index}  value={drives.drive_id}>{drives.company}</option>
+    let driveMenu = this.state.drives.map((drives, index) => (
+      <option key={index} value={drives.drive_id}>{drives.company}</option>
     ));
+
     return (
       <div>
         <div className="ui container">
@@ -335,17 +316,19 @@ class Page extends React.Component {
               {driveMenu}
             </select>
             <br />
-            <button className="ui button" onClick={()=>{
-              this.getDriveData()
-              this.enableTable()
-              
-              }}>
+            <button className="ui button" onClick={() => {
+              this.enableTable();
+              this.getDriveData();
+            }
+            }>
               <i className="check icon" />
             </button>
           </div>
+          <div>
+            <br/>
+            {this.displayMessage()}
         </div>
-        <br />
-        <div className="message-display">{this.displayMessage()}</div>
+        </div>
         <div>
           <br />
           <div className="ui container">
