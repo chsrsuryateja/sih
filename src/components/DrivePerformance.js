@@ -3,7 +3,6 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import tnpbase from "../api/tnpbase";
 import ErrorDisplay from './ui_utils/ErrorDisplay';
-import SuccessMessage from './ui_utils/SuccessMessage'
 
 class Page extends React.Component {
   state = {
@@ -34,19 +33,19 @@ class Page extends React.Component {
         if (response.status === 200) {
           if (response.data.result.length !== 0) {
             console.log("Fetching Data");
-            for (let i = 0; i < response.data.result.students.length; i++) {
+            for (let i = 0; i < response.data.result[0].length; i++) {
               this.state.detailEdit.push({
                 editStatus: false,
-                initialRoundName: response.data.result.students[i].round_name,
+                initialRoundName: response.data.result[0][i].round_name,
                 initialAttendanceStatus:
-                  response.data.result.students[i].attendance_status,
-                initialSelectStatus: response.data.result.students[i].selected,
-                initialOfferStatus: response.data.result.students[i].offer_letter
+                  response.data.result[0][i].attendance_status,
+                initialSelectStatus: response.data.result[0][i].selected,
+                initialOfferStatus: response.data.result[0][i].offer_letter
               });
             }
             this.setState({
-              studentDetails: response.data.result.students,
-              rounds: response.data.result.rounds,
+              studentDetails: response.data.result[0],
+              rounds: response.data.result[1],
               loading : false,
               message : response.data.status,
               error : ""
@@ -80,8 +79,8 @@ class Page extends React.Component {
       .post("/drives/drivesList", { data })
       .then(response => {
         if (response.status === 200) {
-          if (response.data.result.length !== 0) {
-            this.setState({ drives: response.data.result });
+          if (response.data.length !== 0) {
+            this.setState({ drives: response.data });
           } else {
             window.alert(`No drives`)
           }
@@ -207,8 +206,8 @@ class Page extends React.Component {
                   number.round_name = e.target.value;
                 }}
               >
-                {this.state.rounds.map(round => (
-                  <option value={round.round_name}>{round.round_name}</option>
+                {this.state.rounds.map((round,index) => (
+                  <option key ={index}   value={round.round_name}>{round.round_name}</option>
                 ))}
               </select>
             ) : (
@@ -224,8 +223,8 @@ class Page extends React.Component {
                   number.attendance_status = e.target.value;
                 }}
               >
-                {this.state.values.map(status => (
-                  <option value={status}>{status}</option>
+                {this.state.values.map((status,index) => (
+                  <option key ={index}   value={status}>{status}</option>
                 ))}
               </select>
             ) : (
@@ -241,8 +240,8 @@ class Page extends React.Component {
                   number.selected = e.target.value;
                 }}
               >
-                {this.state.selectionStatus.map(selection => (
-                  <option value={selection}>{selection}</option>
+                {this.state.selectionStatus.map((selection,index) => (
+                  <option key ={index}   value={selection}>{selection}</option>
                 ))}
               </select>
             ) : (
@@ -258,8 +257,8 @@ class Page extends React.Component {
                   number.offer_letter = e.target.value;
                 }}
               >
-                {this.state.offerStatus.map(selection => (
-                  <option value={selection}>{selection}</option>
+                {this.state.offerStatus.map((selection,index) => (
+                  <option key ={index}   value={selection}>{selection}</option>
                 ))}
               </select>
             ) : (

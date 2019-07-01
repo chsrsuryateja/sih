@@ -63,8 +63,8 @@ class SearchStudent extends React.Component {
               loading : false,
               message : response.data.status,
               error : "",
-              personalDetails: response.data.result.personal,
-              driveDetails: response.data.result.drive
+              personalDetails: response.data.result[0],
+              driveDetails: response.data.result[1]
             });
           } else {
             this.setState({
@@ -94,9 +94,9 @@ class SearchStudent extends React.Component {
     const data = { drive_name: drive};
     tnpbase 
       .post("/drive/rounds",data)
-      .then((result) => {
+      .then((res) => {
         this.setState({
-          rounds : result.data
+          rounds : res.data.result
         });
       })
       .catch((err) => {
@@ -279,8 +279,8 @@ class SearchStudent extends React.Component {
                   
                 }}
               >
-                {this.state.rounds.map(selection => {
-                  return(<option value={selection.round_name}>{selection.round_name}</option>)
+                {this.state.rounds.map((selection,index )=> {
+                  return(<option key = {index}  value={selection.round_name}>{selection.round_name}</option>)
                 })}
               </select>
             ) : (
@@ -314,8 +314,8 @@ class SearchStudent extends React.Component {
                   
                 }}
               >
-                {this.state.offerStatus.map(selection => (
-                  <option value={selection}>{selection}</option>
+                {this.state.offerStatus.map((selection,index) => (
+                  <option key = {index} value={selection}>{selection}</option>
                 ))}
               </select>
             ) : (
