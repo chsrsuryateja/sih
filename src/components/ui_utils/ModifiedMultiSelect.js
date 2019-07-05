@@ -28,6 +28,7 @@ export const ModifiedMultiSelect = ({
       <Multiselect
        {...input}
         options={data}
+        placeholder={placeholder}
         onSelectOptions={res => input.onChange(res)}
       />
       <div style={{ display: showError ? "" : "none" }}>{meta.error}</div>

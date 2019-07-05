@@ -4,11 +4,13 @@ import "react-datepicker/dist/react-datepicker.css";
 import tnpbase from "../api/tnpbase";
 import ErrorDisplay from './ui_utils/ErrorDisplay';
 
+
 class Page extends React.Component {
   state = {
     drive_id: 0,
     drives: [],
     rounds: [],
+    branch_code : -1,
     date: null,
     studentDetails: [],
     values: ["P", "A"],
@@ -24,11 +26,13 @@ class Page extends React.Component {
 
   getDriveData = () => {
     let data = {
-      drive_id: this.state.drive_id
+      drive_id: this.state.drive_id,
+      branch_code : this.state.branch_code
     };
     tnpbase
       .post("/drives/performance/driveDetails", data)
       .then(response => {
+        console.log(response);
         this.setState({submitted : true,loading : true});
         if (response.status === 200) {
           if (response.data.result.length !== 0) {
@@ -104,7 +108,8 @@ class Page extends React.Component {
               round_name: this.state.studentDetails[i].round_name,
               attendanceStatus: this.state.studentDetails[i].attendance_status,
               selected: this.state.studentDetails[i].selected,
-              offer_letter: this.state.studentDetails[i].offer_letter
+              offer_letter: this.state.studentDetails[i].offer_letter,
+              userRole : sessionStorage.getItem("userRole")
             };
             tnpbase
               .post("/drives/performance/editDetail", data)
@@ -125,7 +130,6 @@ class Page extends React.Component {
                 ].offer_letter;
                 this.getDrives(this.state.date);
                 this.setState({ detailEdit: ups });
-                window.alert('Submit successfull');
               });
           }}
         >
@@ -275,11 +279,15 @@ class Page extends React.Component {
     this.setState({showMessage: true})
   }
 
+  setBranch = () =>{
+    this.setState({branch_code : sessionStorage.getItem("branch")});
+  }
+
   render() {
     let driveMenu = this.state.drives.map((drives, index) => (
       <option key={index} value={drives.drive_id}>{drives.company}</option>
     ));
-
+    console.log(this.state.studentDetails.length);
     return (
       <div>
         <div className="ui container">
@@ -314,6 +322,30 @@ class Page extends React.Component {
               <option value="">Select Drive</option>
               {driveMenu}
             </select>
+            {sessionStorage.getItem("branch") === "null" ? (
+              <div>
+                <br />
+                <label>Select Branch : </label>
+                <select
+                placeholder = "Select Branch"
+                value = {this.state.branch_code}
+                onChange ={ e =>{
+                  this.setState({branch_code : e.target.value});
+                }}>
+                  <option value = "">Select Branch</option>
+                  <option value={Number('5' )}>CSE</option>
+                  <option value={Number('12')}>IT</option>
+                  <option value={Number('4' )}>ECE</option>
+                  <option value={Number('3' )}>MECH</option>
+                  <option value={Number('1' )}>CIVIL</option>
+                  <option value={Number('2' )}>EEE</option>
+                </select>
+              </div>
+            ) : (
+              <div>
+                {this.setBranch}
+              </div>
+            )}
             <br />
             <button className="ui button" onClick={() => {
               this.enableTable();

@@ -7,15 +7,10 @@ export class Multiselect extends Component {
     super(props);
     this.state = {
       checked: [],
-      dropDownValue: []
     };
     this.checkBox = this.checkBox.bind(this);
   }
-  componentWillMount() {
-    this.setState({
-      dropDownValue: this.props.options
-    });
-  }
+  
   removeChip(value) {
     this.checkBox(value, false);
   }
@@ -78,8 +73,8 @@ export class Multiselect extends Component {
     return chip;
   }
   returnList() {
-    const list = this.state.dropDownValue
-      ? this.state.dropDownValue.map((data, index) => (
+    const list = this.props.options
+      ? this.props.options.map((data, index) => (
           <label className="container-tnp" key={index}>
             {data.name}
             <input
@@ -101,8 +96,8 @@ export class Multiselect extends Component {
         <input
           type="text"
           name="Search"
-          placeholder="Select Branch"
           className="input-box-tnp"
+          placeholder={this.props.placeholder}
           onChange={e => this.searchFun(e)}
         />
         <div className="search-result-tnp">

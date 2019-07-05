@@ -95,6 +95,7 @@ class SearchStudent extends React.Component {
     tnpbase 
       .post("/drive/rounds",data)
       .then((res) => {
+        console.log(res)
         this.setState({
           rounds : res.data.result
         });
@@ -119,7 +120,6 @@ class SearchStudent extends React.Component {
                 .then(()=>{
                   this.getStudentData();
                   this.setState({editDetail : -1});
-                  window.alert('Submit successfull');
                 })
                 .catch((err)=>{console.log(err)})
             }
@@ -216,7 +216,6 @@ class SearchStudent extends React.Component {
                 .then(()=>{
                   this.getStudentData();
                   this.setState({driveEditDetail : -1 , driveContent : []});
-                  window.alert('Submit successfull');
                 })
                 .catch((err)=>{console.log(err)})
             }
@@ -333,12 +332,11 @@ class SearchStudent extends React.Component {
 
   sendData =()=>{
     console.log("Send data")
-    let data = {students : [{HTNO : this.state.rollNumber}] , driveToAdd : this.state.drive_id}
+    let data = {students : [{HTNO : this.state.personalDetails.HTNO}] , driveToAdd : this.state.drive_id}
 
     tnpbase
       .post('/students/addToDrive',{data})
       .then((res)=>{
-        window.alert('Submit successfull');
         console.log("Succesfully added");
       })
       .catch((err)=>{

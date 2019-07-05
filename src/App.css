@@ -1,5 +1,9 @@
-#student-header {
-    background-image: url("./images/studentbg.jpg");
-    background-repeat: no-repeat;
-    background-size: 100%
-}
+/* body > .grid {
+    height: 100%;
+  }
+  .image {
+    margin-top: -100px;
+  } */
+  .logincolumn {
+    max-width: 450px;
+  }

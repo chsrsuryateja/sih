@@ -13,6 +13,7 @@ import ErrorDisplay from "./ui_utils/ErrorDisplay";
 import { fetchDrives } from "../actions/";
 import { Field, reduxForm, formValueSelector } from "redux-form";
 import SuccessMessage from "./ui_utils/SuccessMessage";
+import MultiSelect from "./Multiselect/MultiSelect";
 
 const data = [
   {
@@ -51,22 +52,21 @@ class FilterStudents extends React.Component {
     additionalMsg: "",
     submitted: false,
     addToDriveClicked: false,
-    specialDrives: []
+    specialDrives: [],
+    selectedCompanies: []
   };
 
-  componentDidUpdate = () => {
+  componentDidMount= () => {
     this.props.fetchDrives("upcoming");
+    this.getSpecialDrives();
   };
 
-  componentDidMount = () => {
-    this.getSpecialDrives();
-  }
 
   getSpecialDrives = () => {
     tnpbase
       .get("/drives/special")
       .then(res => {
-        console.log(res.data.result)
+        // console.log(res.data.result)
         this.setState({ specialDrives: res.data.result });
       })
       .catch(err => {
@@ -134,19 +134,19 @@ class FilterStudents extends React.Component {
   submitFilterDetails = formValues => {
     this.setState({ submitted: true, loading: true });
     const data = {
-      btech_score: parseInt(formValues.btechScore),
+      btech_score: parseFloat(formValues.btechScore),
       btech_score_type: formValues.btechScoreType,
       branch: formValues.selectedBranches,
       backlogs: parseInt(formValues.backlogs),
-      class12_score: parseInt(formValues.class12Score),
+      class12_score: parseFloat(formValues.class12Score),
       class12_score_type: formValues.class12ScoreType,
-      class10_score: parseInt(formValues.class10Score),
+      class10_score: parseFloat(formValues.class10Score),
       class10_score_type: formValues.class10ScoreType,
       eamcet_rank: parseInt(formValues.eamcetRank),
       gender: formValues.gender,
       isSelected: formValues.allowSelected,
       year_of_passing: parseInt(formValues.yop),
-      selectedCompanies: formValues.selectedCompanies
+      selectedCompanies: this.state.selectedCompanies
     };
     tnpbase
       .post("/students/filter", { data })
@@ -353,15 +353,13 @@ class FilterStudents extends React.Component {
               component={ModifiedMultiSelect}
               data={data}
               label="Branch"
+              placeholder="Select Branches"
             />
-            {this.props.allowSelected === "yes" ? (
-              <Field
-                name="selectedCompanies"
-                component={ModifiedMultiSelect}
-                data={this.state.specialDrives}
-                label="Select Companies"
-              />
-            ) : null}
+            <div className="field" style={{display: this.props.allowSelected==="yes" ? "" : "none"}}>
+              <label>Select Companies</label>
+            <MultiSelect options={this.state.specialDrives} onSelectOptions = {(e) => this.setState({selectedCompanies: e})} placeholder="Select Companies"/>
+            </div>
+            
           </div>
           <div className="field" style={{ marginTop: "10px" }}>
             {this.displayStatus()}

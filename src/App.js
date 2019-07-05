@@ -1,5 +1,5 @@
 import React from "react";
-import { Route, Switch } from "react-router-dom";
+import { Route, Switch, withRouter } from "react-router-dom";
 
 import SideBar from "./components/SideBar";
 import Navbar from "./components/Navbar";
@@ -20,12 +20,19 @@ import DrivePerformanceDisplay from "./components/DrivePerformance";
 import NewTestDisplay from "./components/NewTestDisplay";
 import TestPerformaceDisplay from "./components/TestPerformace";
 
+import LoginPage from "./components/LoginPage";
+
 import tnpbase from "./api/tnpbase";
 
 import { fetchRounds, fetchYears } from "./actions";
 
+import AddUser from "./components/AddUser";
+
 import "./App.css";
 import { connect } from "react-redux";
+import logo from "./images/logo.png";
+import ResetUser from "./components/ResetUser";
+import DeleteUser from "./components/DeleteUser";
 
 class App extends React.Component {
   state = {
@@ -33,7 +40,11 @@ class App extends React.Component {
     loading: false,
     error: "",
     message: "",
-    submitted: false
+    submitted: false,
+    login: false,
+    currentUser: "",
+    userRole: "",
+    loginError: ""
   };
 
   handleMenuClick = () => {
@@ -87,62 +98,160 @@ class App extends React.Component {
     this.props.fetchYears();
   };
 
-  render() {
-    return (
-      <div>
+  handleLogin = (user, password) => {
+    this.setState({loginError: "Loading..."})
+    const data = { user, password };
+    tnpbase
+      .post("/login/page", { data })
+      .then(res => {
+        if(res.data.login) {
+          sessionStorage.setItem("login", true);
+          sessionStorage.setItem("currentUser", res.data.user);
+          sessionStorage.setItem("userRole", res.data.role);
+          sessionStorage.setItem("branch",res.data.branch);
+          // window.location.reload();
+          this.props.history.push("/");
+        }
+        this.setState({ loginError: res.data.status });
+      })
+      .catch(err => {
+        console.log(err);
+        this.setState({loginError: err.message})
+      });
+  };
+
+  handleLogout = () => {
+    sessionStorage.setItem("login",false);
+    sessionStorage.setItem("currentUser","");
+    sessionStorage.setItem("userRole", "");
+    window.location.reload();
+  }
+
+  displayInnerContent = () => {
+    if (sessionStorage.getItem("userRole") === "ADMIN") {
+      return (
+        <Switch>
+          <Route exact path="/" component={Dashboard} />
+          <Route
+            path="/students/add"
+            render={() => (
+              <AddStudentsDisplay
+                handleUpload={this.FileUploadHandler}
+                message={this.state.message}
+                error={this.state.error}
+                loading={this.state.loading}
+                submitted={this.state.submitted}
+                handleXClick={this.handleXClick}
+              />
+            )}
+          />
+          <Route path="/students/search" component={SearchStudentDisplay} />
+          <Route path="/user/add" component={AddUser} />
+          <Route path="/students/filter" component={FilterStudentsDisplay} />
+          <Route path="/drives/add" component={AddDriveDisplay} />
+          <Route path="/drives/view" component={DriveViewDisplay} />
+          <Route path="/rounds/config" component={RoundsConfigDisplay} />
+          <Route path="/drives/attendance" component={DriveAttendanceDisplay} />
+          <Route
+            path="/drives/performance"
+            component={DrivePerformanceDisplay}
+          />
+          <Route path="/tests/new" component={NewTestDisplay} />
+          <Route path="/tests/performance" component={TestPerformaceDisplay} />
+          <Route path="/user/reset" component={ResetUser} />
+          <Route path="/user/delete" component={DeleteUser} />
+        </Switch>
+      );
+    } else if (sessionStorage.getItem("userRole")=== "TPO") {
+      return (
+        <Switch>
+          <Route exact path="/" component={Dashboard} />
+          <Route
+            path="/students/add"
+            render={() => (
+              <AddStudentsDisplay
+                handleUpload={this.FileUploadHandler}
+                message={this.state.message}
+                error={this.state.error}
+                loading={this.state.loading}
+                submitted={this.state.submitted}
+                handleXClick={this.handleXClick}
+              />
+            )}
+          />
+          <Route path="/students/search" component={SearchStudentDisplay} />
+          <Route path="/students/filter" component={FilterStudentsDisplay} />
+          <Route path="/drives/add" component={AddDriveDisplay} />
+          <Route path="/drives/view" component={DriveViewDisplay} />
+          <Route path="/rounds/config" component={RoundsConfigDisplay} />
+          <Route path="/drives/attendance" component={DriveAttendanceDisplay} />
+          <Route
+            path="/drives/performance"
+            component={DrivePerformanceDisplay}
+          />
+          <Route path="/tests/new" component={NewTestDisplay} />
+          <Route path="/tests/performance" component={TestPerformaceDisplay} />
+         
+        </Switch>
+      );
+    } else if (sessionStorage.getItem("userRole") === "PCO") {
+      return (
+        <Switch>
+          <Route exact path="/" component={Dashboard} />
+          <Route path="/drives/view" component={DriveViewDisplay} />
+          <Route
+            path="/drives/performance"
+            component={DrivePerformanceDisplay}
+          />
+          <Route path="/tests/performance" component={TestPerformaceDisplay} />
+        </Switch>
+      );
+    }
+  };
+
+  displayContent = () => {
+    if (JSON.parse(sessionStorage.getItem("login")) === true) {
+      return (
         <div>
-          <Navbar handleMenuClick={this.handleMenuClick} />
+          <Navbar handleMenuClick={this.handleMenuClick} handleLogout={this.handleLogout} user={sessionStorage.getItem("currentUser")}/>
           <SideBar
             isVisible={this.state.sidebarVisible}
             onClose={this.handleMenuClick}
+            userRole={sessionStorage.getItem("userRole")}
           />
 
           <div style={{ marginLeft: "10px", marginRight: "10px" }}>
-            <Switch>
-              <Route exact path="/" component={Dashboard} />
-              <Route
-                path="/students/add"
-                render={() => (
-                  <AddStudentsDisplay
-                    handleUpload={this.FileUploadHandler}
-                    message={this.state.message}
-                    error={this.state.error}
-                    loading={this.state.loading}
-                    submitted={this.state.submitted}
-                    handleXClick={this.handleXClick}
-                  />
-                )}
-              />
-              <Route path="/students/search" component={SearchStudentDisplay} />
-              <Route
-                path="/students/filter"
-                component={FilterStudentsDisplay}
-              />
-              <Route path="/drives/add" component={AddDriveDisplay} />
-              <Route path="/drives/view" component={DriveViewDisplay} />
-              <Route path="/rounds/config" component={RoundsConfigDisplay} />
-              <Route
-                path="/drives/attendance"
-                component={DriveAttendanceDisplay}
-              />
-              <Route
-                path="/drives/performance"
-                component={DrivePerformanceDisplay}
-              />
-              <Route path="/tests/new" component={NewTestDisplay} />
-              <Route
-                path="/tests/performance"
-                component={TestPerformaceDisplay}
-              />
-            </Switch>
+            {this.displayInnerContent()}
           </div>
         </div>
+      );
+    } else {
+      return <LoginPage handleLogin={this.handleLogin} loginError={this.state.loginError}/>;
+    }
+  };
+
+  render() {
+    return (
+      <div>
+        <div style={{ backgroundColor: "#1b181a" }}>
+          <img
+            src={logo}
+            alt="Logo"
+            style={{
+              display: "block",
+              marginLeft: "auto",
+              marginRight: "auto",
+              height: "60px"
+            }}
+          />
+        </div>
+        {this.displayContent()}
       </div>
     );
   }
 }
 
-export default connect(
+export default withRouter(connect(
   null,
   { fetchRounds, fetchYears }
-)(App);
+)(App));
