@@ -67,16 +67,17 @@ class NewTestDisplay extends React.Component{
   }
 
   submitData = () =>{
-    files = this.state.file;
+    // console.log(this.state.files);
     const formData = new FormData();
-    Object.keys(files).forEach(key => {
-      const file = files[key];
+    Object.keys(this.state.files).forEach(key => {
+      const file = this.state.files[key];
       formData.append(
         "file",
         new Blob([file], { type: file.type }),
         file.name || "file"
       );
     });
+    // console.log(formData);
     tnpbase 
       .post('/test/addData',formData)
       .then(res => {
