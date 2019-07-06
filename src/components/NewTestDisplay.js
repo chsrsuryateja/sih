@@ -67,29 +67,42 @@ class NewTestDisplay extends React.Component{
   }
 
   submitData = () =>{
-    let data = {files : this.state.file}
+    files = this.state.file;
+    const formData = new FormData();
+    Object.keys(files).forEach(key => {
+      const file = files[key];
+      formData.append(
+        "file",
+        new Blob([file], { type: file.type }),
+        file.name || "file"
+      );
+    });
     tnpbase 
-      .post('/test/addData',data)
-      .then(response =>{
-        this.setState({submitted : true,loading : true});
-        if (response.status === 200) {
+      .post('/test/addData',formData)
+      .then(res => {
+        if (res.status === 200) {
           this.setState({
             file : [],
-            loading : false,
-            message : response.data.status,
-            error : ""
+            loading: false,
+            message: res.data.status,
+            error: ""
+          });
+        } else {
+          this.setState({
+            loading: false,
+            error: res.data.status,
+            message: res.data.error
           });
         }
       })
       .catch(err => {
         console.log(err);
         this.setState({
-          submitted:true,
-          loading : false,
-          message : err.message,
-          error : "Unable to send data"
+          loading: false,
+          error: "Unable to submit data",
+          message: err.message
         });
-      })
+      });
   }
 
   render(){
