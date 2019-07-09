@@ -69,13 +69,14 @@ class NewTestDisplay extends React.Component{
   submitData = () =>{
     // console.log(this.state.files);
     const formData = new FormData();
-    Object.keys(this.state.files).forEach(key => {
-      const file = this.state.files[key];
+    Object.keys(this.state.file).forEach(key => {
+      const file = this.state.file[key];
       formData.append(
         "file",
         new Blob([file], { type: file.type }),
         file.name || "file"
       );
+      console.log(file.name);
     });
     // console.log(formData);
     tnpbase 
