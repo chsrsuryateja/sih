@@ -41,7 +41,7 @@ class NewTestDisplay extends React.Component{
     }
   }
 
-  removeFile = (i )=>{
+  removeFile = (i)=>{
     let ups = this.state.file;
     ups.splice(i,1);
     this.setState({file : ups});

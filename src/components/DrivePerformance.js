@@ -287,7 +287,6 @@ class Page extends React.Component {
     let driveMenu = this.state.drives.map((drives, index) => (
       <option key={index} value={drives.drive_id}>{drives.company}</option>
     ));
-    console.log(this.state.studentDetails.length);
     return (
       <div>
         <div className="ui container">

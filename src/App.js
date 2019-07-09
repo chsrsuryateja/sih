@@ -14,7 +14,6 @@ import AddDriveDisplay from "./components/AddDrives/AddDrive";
 import DriveViewDisplay from "./components/DrivesView/DriveView";
 import RoundsConfigDisplay from "./components/RoundsConfig";
 
-import DriveAttendanceDisplay from "./components/DriveAttendance";
 import DrivePerformanceDisplay from "./components/DrivePerformance";
 
 import NewTestDisplay from "./components/NewTestDisplay";
@@ -151,7 +150,6 @@ class App extends React.Component {
           <Route path="/drives/add" component={AddDriveDisplay} />
           <Route path="/drives/view" component={DriveViewDisplay} />
           <Route path="/rounds/config" component={RoundsConfigDisplay} />
-          <Route path="/drives/attendance" component={DriveAttendanceDisplay} />
           <Route
             path="/drives/performance"
             component={DrivePerformanceDisplay}
@@ -184,7 +182,6 @@ class App extends React.Component {
           <Route path="/drives/add" component={AddDriveDisplay} />
           <Route path="/drives/view" component={DriveViewDisplay} />
           <Route path="/rounds/config" component={RoundsConfigDisplay} />
-          <Route path="/drives/attendance" component={DriveAttendanceDisplay} />
           <Route
             path="/drives/performance"
             component={DrivePerformanceDisplay}
