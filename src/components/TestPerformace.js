@@ -7,6 +7,7 @@ class TestPerformance extends React.Component {
     branch_code: -1,
     subj: '',
     subjects: [],
+    yop : '',
     testData : []
   }
 
@@ -32,7 +33,7 @@ class TestPerformance extends React.Component {
   }
 
   getData = () =>{
-    let data = { branch_code : this.state.branch_code , subject : this.state.subj}
+    let data = { branch_code : this.state.branch_code , subject : this.state.subj,yop : this.state.yop}
     tnpbase
       .post('/test/details',data)
       .then(res =>{
@@ -85,6 +86,16 @@ class TestPerformance extends React.Component {
             <option value ="all">All</option>
             {subjList}
           </select>
+          <label>Enter Year of Passing</label>
+          <input 
+          value ={this.state.yop}
+          onChange = {e=>{
+            this.setState({yop : e.target.value})
+          }
+
+          }
+          />
+          <br/>
           <br/>
           <button className="ui button" onClick={() => {
             this.getData();
@@ -92,6 +103,7 @@ class TestPerformance extends React.Component {
           }>
             <i className="check icon" />
           </button>
+          
         </div>
 
       </div>
