@@ -29,6 +29,7 @@ class TestPerformance extends React.Component {
       .then(res => {
         if (res.data.length === 0) {
           window.alert('No subjects');
+          this.setState({subjects:[]});
         }
         else {
           this.setState({ subjects: res.data });
@@ -58,7 +59,8 @@ class TestPerformance extends React.Component {
       .post('/tests',data)
       .then(res => {
         if (res.data.tests.length === 0) {
-          window.alert('No subjects');
+          window.alert('No tests');
+          this.setState({testNames : [],testData:[]});
         }
         else {
           this.setState({ testNames: res.data.tests });
@@ -293,7 +295,6 @@ class TestPerformance extends React.Component {
             {this.subjectDisplay()}
           </select>
           <br />
-          <br />
           <button className="ui button" onClick={() => {
             this.enableMessage();
             this.getData();
@@ -308,7 +309,7 @@ class TestPerformance extends React.Component {
         </div>
         <div>
           <br />
-          <div className="ui container">
+          <div className="ui rounded container">
             <table className="ui blue celled structured striped compact table">
               <thead style={{ textAlign: "center" }}>
                 <tr>
@@ -324,6 +325,7 @@ class TestPerformance extends React.Component {
             </table>
           </div>
         </div>
+        <br/>
       </div>
     );
   }
