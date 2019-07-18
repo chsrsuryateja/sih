@@ -2,8 +2,6 @@ import React from "react";
 import tnpbase from '../api/tnpbase';
 import ErrorDisplay from './ui_utils/ErrorDisplay';
 
-
-
 class TestPerformance extends React.Component {
   state = {
     branch_code: '',
