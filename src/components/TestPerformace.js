@@ -3,9 +3,11 @@ import tnpbase from '../api/tnpbase';
 import ErrorDisplay from './ui_utils/ErrorDisplay';
 
 
+
 class TestPerformance extends React.Component {
   state = {
     branch_code: '',
+    years : [],
     testNames: [],
     subj: '',
     subjects: [],
@@ -18,8 +20,12 @@ class TestPerformance extends React.Component {
     showTable: []
   }
 
-  getSubjects = () => {
-    let data = {branch: this.state.branch_code}
+  componentDidMount = () =>{
+    this.getYears();
+  }
+
+  getSubjects = (branch_code) => {
+    let data = {branch: branch_code,year:this.state.yop}
     tnpbase
       .post('/tests/subjects',data)
       .then(res => {
@@ -36,8 +42,20 @@ class TestPerformance extends React.Component {
       })
   }
 
-  getTestNames = () => {
-    let data = {branch: this.state.branch_code}
+  getYears = () =>{
+    tnpbase
+      .post('/tests/passing')
+      .then(res=>{
+        if(res.data.result.length !==0){
+          this.setState({years : res.data.result});
+        }else{
+          this.setState({years : []});
+        }
+      })
+  }
+
+  getTestNames = (branch_code) => {
+    let data = {branch: branch_code, year:this.state.yop}
     tnpbase
       .post('/tests',data)
       .then(res => {
@@ -55,11 +73,6 @@ class TestPerformance extends React.Component {
 
   }
 
-  componentDidMount = () => {
-    // this.getSubjects();
-    // this.getTestNames();
-  }
-
   getData = () => {
     let data = { branch_code: this.state.branch_code, subject: this.state.subj, yop: this.state.yop }
     tnpbase
@@ -67,6 +80,7 @@ class TestPerformance extends React.Component {
       .then(res => {
         this.setState({ submitted: true, loading: true });
         if (res.status === 200) {
+          console.log(res.data)
           if (res.data.testData.length !== 0) {
             this.setState({
               testData: res.data.testData,
@@ -75,6 +89,7 @@ class TestPerformance extends React.Component {
               error: "",
               showTable: data 
             });
+            console.log("Successfull");
           } else {
             this.setState({ testData: [], loading: false, error: res.data.status, message: res.data.error})
           }
@@ -95,6 +110,12 @@ class TestPerformance extends React.Component {
           error: "Unable to send data"
         });
       })
+  }
+
+  yearDisplay = () =>{
+    return this.state.years.map((year,i)=>{
+      return <option key={i} value={year}>{year}</option>
+    })
   }
 
   displayMessage = () => {
@@ -151,7 +172,7 @@ class TestPerformance extends React.Component {
     for (let i = 0; i < this.state.testNames.length; i++) {
       for (let j = 0; j < this.state.subjects.subjects.length; j++) {
         if (typeof (values[this.state.testNames[i]]) !== 'undefined') {
-          if (typeof (values[this.state.testNames[i]][0][this.state.subjects.subjects[j]]) === 'undefined') {
+          if (typeof (values[this.state.testNames[i]][this.state.subjects.subjects[j]]) === 'undefined') {
 
             temp.push(
               <td>{0}</td>
@@ -159,7 +180,7 @@ class TestPerformance extends React.Component {
           }
           else {
             temp.push(
-              <td>{values[this.state.testNames[i]][0][this.state.subjects.subjects[j]]}</td>
+              <td key={j}>{values[this.state.testNames[i]][this.state.subjects.subjects[j]]}</td>
             );
           }
 
@@ -202,7 +223,6 @@ class TestPerformance extends React.Component {
     } else {
       let list = []
       let i = 0;
-      // <th key={i}>{this.state.showTable.subject}</th>
       for (i = 0; i < this.state.testNames.length; i++) {
         list.push(<th key={i} colSpan={this.state.subjects.subjects.length}>{this.state.showTable.subject}</th>);
       }
@@ -233,13 +253,25 @@ class TestPerformance extends React.Component {
           </div>
         </h3>
         <div className="ui form">
+          <label>Enter Year of Passing</label>
+          <select
+            value={this.state.yop}
+            placeholder = "Enter Year of passing"
+            onChange={e => {
+              this.setState({ yop: e.target.value });
+            }
+            }
+          >
+            <option value="">Select YOP</option>
+            {this.yearDisplay()}
+          </select>
           <label>Select Branch : </label>
           <select
             placeholder="Select Branch"
             value={this.state.branch_code}
             onChange={e => {
-              this.getSubjects();
-              this.getTestNames();
+              this.getSubjects(e.target.value);
+              this.getTestNames(e.target.value);
               this.setState({ branch_code: e.target.value });
             }}>
             <option value={''}>Select Branch</option>
@@ -262,14 +294,6 @@ class TestPerformance extends React.Component {
             <option value="all">All</option>
             {this.subjectDisplay()}
           </select>
-          <label>Enter Year of Passing</label>
-          <input
-            value={this.state.yop}
-            onChange={e => {
-              this.setState({ yop: e.target.value });
-            }
-            }
-          />
           <br />
           <br />
           <button className="ui button" onClick={() => {
