@@ -157,13 +157,11 @@ class TestPerformance extends React.Component {
         );
       }
       let studentData = this.state.testData;
-      let temp = [];
       let page = this.state.page;
-      let max = this.state.maxPages
-      return studentData.map((data, i) => {
-        if(i >= (page-1)*10 && i <=(page*10) ){
+      return studentData.map((data, index) => {
+        if(index >= (page-1)*10 && index <=(page*10) ){
           return (
-            <tr key={i}>
+            <tr key={index}>
               <td>{data.rollNumber}</td>
               {this.displayMarks(data)}
               <td>{data.avg}</td>
@@ -184,65 +182,99 @@ class TestPerformance extends React.Component {
     scores.pop();
     scores.splice(0, 1);
     let temp = [];
-    for (let i = 0; i < this.state.testNames.length; i++) {
-      for (let j = 0; j < this.state.subjects.subjects.length; j++) {
-        if (typeof (values[this.state.testNames[i]]) !== 'undefined') {
-          if (typeof (values[this.state.testNames[i]][this.state.subjects.subjects[j]]) === 'undefined') {
+    let subs = this.state.showTable.subject;
+    if(subs === "all"){
+      for (let i = 0; i < this.state.testNames.length; i++) {
+        for (let j = 0; j < this.state.subjects.subjects.length; j++) {
+          if (typeof (values[this.state.testNames[i]]) !== 'undefined') {
+            if (typeof (values[this.state.testNames[i]][this.state.subjects.subjects[j]]) === 'undefined'){
+              temp.push(
+                <td key={j}>{0}</td>
+              );
+            }
+            else {
+              temp.push(
+                <td key={j}>{values[this.state.testNames[i]][this.state.subjects.subjects[j]]}</td>
+              );
+            }
+  
+          } else {
             temp.push(
-              <td key={j}>{0}</td>
+              <td>Absent</td>
+            );
+          }
+        }
+      }
+      return temp.map((val) => {
+        return val;
+      })
+    } else{
+      for(let i=0;i<this.state.testNames.length;i++){
+        if (typeof (values[this.state.testNames[i]]) !== 'undefined') {
+          if (typeof (values[this.state.testNames[i]][this.state.showTable.subject]) === 'undefined'){
+            temp.push(
+              <td key={i}>{0}</td>
             );
           }
           else {
-            temp.push(
-              <td key={j}>{values[this.state.testNames[i]][this.state.subjects.subjects[j]]}</td>
-            );
+            temp.push( <td key={i} colSpan={this.state.subjects.subjects.length}>{values[this.state.testNames[i]][this.state.showTable.subject]}</td>);
           }
-
         } else {
           temp.push(
             <td>Absent</td>
           );
         }
       }
+      return temp.map((val) => {
+        return val;
+      })
     }
-    return temp.map((val) => {
-      return val;
-    })
   }
 
   testsDisplay = () => {
-    return this.state.testNames.map((test, i) => {
-      return (
-        <th key={i} colSpan={this.state.subjects.subjects.length}>
-          {test}
-        </th>
-      );
-    });
+    if(this.state.submitted !== true){
+      return 
+    }
+    else{
+      return this.state.testNames.map((test, i) => {
+        return (
+          <th key={i} colSpan={this.state.subjects.subjects.length}>
+            {test}
+          </th>
+        );
+      });
+
+    }
   }
 
   subjDisplay = () => {
-    if (this.state.showTable.subject === 'all' && this.state.subjects.length !== 0) {
-      let subjects = this.state.subjects.subjects.map((sub, i) => (
-        <th key={i}>{sub}</th>
-      ));
-      let list = []
-      let i = 0;
-      for (i = 0; i < this.state.testNames.length; i++) {
-        list.push(subjects);
+    if(this.state.submitted !== true){
+      return
+    } else{
+      if (this.state.showTable.subject === 'all' && this.state.subjects.length !== 0) {
+        let subjects = this.state.subjects.subjects.map((sub, i) => (
+          <th key={i}>{sub}</th>
+        ));
+        let list = []
+        let i = 0;
+        for (i = 0; i < this.state.testNames.length; i++) {
+          list.push(subjects);
+        }
+  
+        return list.map((ele) => {
+          return ele;
+        })
+      } else {
+        let list = []
+        let i = 0;
+        for (i = 0; i < this.state.testNames.length; i++) {
+          list.push(<th key={i} colSpan={this.state.subjects.subjects.length}>{this.state.showTable.subject}</th>);
+        }
+        return list.map((ele) => {
+          return ele;
+        })
       }
 
-      return list.map((ele) => {
-        return ele;
-      })
-    } else {
-      let list = []
-      let i = 0;
-      for (i = 0; i < this.state.testNames.length; i++) {
-        list.push(<th key={i} colSpan={this.state.subjects.subjects.length}>{this.state.showTable.subject}</th>);
-      }
-      return list.map((ele) => {
-        return ele;
-      })
     }
   }
 
@@ -265,7 +297,7 @@ class TestPerformance extends React.Component {
       return <a key={0} className="disabled item">{1}</a>
     } else {
       let temp = [];
-      let maxPage = Math.ceil(56 / 10);
+      let maxPage = Math.ceil(this.state.testData.length / 10);
       for (let i = 1; i <= maxPage; i++) {
         if (i === this.state.page) {
           temp.push(<a key={i} className="active item">{i}</a>);
@@ -349,7 +381,7 @@ class TestPerformance extends React.Component {
         <div>
           <br />
           <div className="ui rounded container">
-            <table className="ui blue celled structured striped compact table">
+            <table className="ui blue celled structured striped compact table" style={{overflowX:'scroll'}}>
               <thead style={{ textAlign: "center" }}>
                 <tr>
                   <th rowSpan={2}>Roll no.</th>
@@ -365,9 +397,6 @@ class TestPerformance extends React.Component {
           </div>
           <br />
           <div className="ui pagination menu" style={{ float: "right" }}>
-            {/* <a class="active item">
-              1
-          </a> */}
             {this.pageCount()}
           </div>
           <br />
