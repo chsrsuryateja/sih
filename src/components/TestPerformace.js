@@ -5,7 +5,7 @@ import ErrorDisplay from './ui_utils/ErrorDisplay';
 class TestPerformance extends React.Component {
   state = {
     branch_code: '',
-    years : [],
+    years: [],
     testNames: [],
     subj: '',
     subjects: [],
@@ -15,21 +15,23 @@ class TestPerformance extends React.Component {
     error: "",
     message: "",
     submitted: false,
-    showTable: []
+    showTable: [],
+    maxPages : 0,
+    page: 1
   }
 
-  componentDidMount = () =>{
+  componentDidMount = () => {
     this.getYears();
   }
 
   getSubjects = (branch_code) => {
-    let data = {branch: branch_code,year:this.state.yop}
+    let data = { branch: branch_code, year: this.state.yop }
     tnpbase
-      .post('/tests/subjects',data)
+      .post('/tests/subjects', data)
       .then(res => {
         if (res.data.length === 0) {
           window.alert('No subjects');
-          this.setState({subjects:[]});
+          this.setState({ subjects: [] });
         }
         else {
           this.setState({ subjects: res.data });
@@ -41,26 +43,26 @@ class TestPerformance extends React.Component {
       })
   }
 
-  getYears = () =>{
+  getYears = () => {
     tnpbase
       .post('/tests/passing')
-      .then(res=>{
-        if(res.data.result.length !==0){
-          this.setState({years : res.data.result});
-        }else{
-          this.setState({years : []});
+      .then(res => {
+        if (res.data.result.length !== 0) {
+          this.setState({ years: res.data.result });
+        } else {
+          this.setState({ years: [] });
         }
       })
   }
 
   getTestNames = (branch_code) => {
-    let data = {branch: branch_code, year:this.state.yop}
+    let data = { branch: branch_code, year: this.state.yop }
     tnpbase
-      .post('/tests',data)
+      .post('/tests', data)
       .then(res => {
         if (res.data.tests.length === 0) {
           window.alert('No tests');
-          this.setState({testNames : [],testData:[]});
+          this.setState({ testNames: [], testData: [] });
         }
         else {
           this.setState({ testNames: res.data.tests });
@@ -80,18 +82,17 @@ class TestPerformance extends React.Component {
       .then(res => {
         this.setState({ submitted: true, loading: true });
         if (res.status === 200) {
-          console.log(res.data)
           if (res.data.testData.length !== 0) {
             this.setState({
               testData: res.data.testData,
+              maxPages : Math.ceil(res.data.testData.length/10),
               loading: false,
               message: res.data.status,
               error: "",
-              showTable: data 
+              showTable: data
             });
-            console.log("Successfull");
           } else {
-            this.setState({ testData: [], loading: false, error: res.data.status, message: res.data.error})
+            this.setState({ testData: [], loading: false, error: res.data.status, message: res.data.error })
           }
         } else {
           this.setState({
@@ -112,8 +113,8 @@ class TestPerformance extends React.Component {
       })
   }
 
-  yearDisplay = () =>{
-    return this.state.years.map((year,i)=>{
+  yearDisplay = () => {
+    return this.state.years.map((year, i) => {
       return <option key={i} value={year}>{year}</option>
     })
   }
@@ -135,29 +136,43 @@ class TestPerformance extends React.Component {
     }
   }
 
-  enableMessage = () => {
+  enableContents = () => {
     let ups = this.state.submitted;
     this.setState({ submitted: !ups });
   }
 
   tableData = () => {
-    if (this.state.testData.length === 0) {
+    if (this.state.submitted === false) {
       return (
         <tr>
-          <td colSpan={this.state.testData.length}>It's Lonely Here</td>
+          <td colSpan={2}>Submit cheyandi mundu </td>
         </tr>
       );
+    } else {
+      if (this.state.testData.length === 0) {
+        return (
+          <tr>
+            <td colSpan={this.state.testNames.length + 2}>It's Lonely Here</td>
+          </tr>
+        );
+      }
+      let studentData = this.state.testData;
+      let temp = [];
+      let page = this.state.page;
+      let max = this.state.maxPages
+      return studentData.map((data, i) => {
+        if(i >= (page-1)*10 && i <=(page*10) ){
+          return (
+            <tr key={i}>
+              <td>{data.rollNumber}</td>
+              {this.displayMarks(data)}
+              <td>{data.avg}</td>
+            </tr>
+          );
+          
+        }
+      })
     }
-    let studentData = this.state.testData;
-    return studentData.map((data, i) => {
-      return (
-        <tr key={i}>
-          <td>{data.rollNumber}</td>
-          {this.displayMarks(data)}
-          <td>{data.avg}</td>
-        </tr>
-      );
-    })
 
   }
 
@@ -173,9 +188,8 @@ class TestPerformance extends React.Component {
       for (let j = 0; j < this.state.subjects.subjects.length; j++) {
         if (typeof (values[this.state.testNames[i]]) !== 'undefined') {
           if (typeof (values[this.state.testNames[i]][this.state.subjects.subjects[j]]) === 'undefined') {
-
             temp.push(
-              <td>{0}</td>
+              <td key={j}>{0}</td>
             );
           }
           else {
@@ -206,8 +220,8 @@ class TestPerformance extends React.Component {
     });
   }
 
-  subjDisplay = () =>{
-    if (this.state.showTable.subject === 'all' && this.state.subjects.length!==0 ) {
+  subjDisplay = () => {
+    if (this.state.showTable.subject === 'all' && this.state.subjects.length !== 0) {
       let subjects = this.state.subjects.subjects.map((sub, i) => (
         <th key={i}>{sub}</th>
       ));
@@ -216,7 +230,7 @@ class TestPerformance extends React.Component {
       for (i = 0; i < this.state.testNames.length; i++) {
         list.push(subjects);
       }
-  
+
       return list.map((ele) => {
         return ele;
       })
@@ -236,10 +250,35 @@ class TestPerformance extends React.Component {
     let list = this.state.subjects;
     if (list.length !== 0) {
       return list.subjects.map((val, i) => {
-        return <option value = {val} key={i}>{val}</option>
+        return <option value={val} key={i}>{val}</option>
       })
     }
 
+  }
+
+  enablePage = (pageNo) => {
+    this.setState({ page: pageNo });
+  }
+
+  pageCount = () => {
+    if (this.state.testData.length === 0) {
+      return <a key={0} className="disabled item">{1}</a>
+    } else {
+      let temp = [];
+      let maxPage = Math.ceil(56 / 10);
+      for (let i = 1; i <= maxPage; i++) {
+        if (i === this.state.page) {
+          temp.push(<a key={i} className="active item">{i}</a>);
+        } else {
+          temp.push(<a key={i} className="item" onClick={() => {
+            this.enablePage(i);
+          }}>{i}</a>);
+        }
+      }
+      return temp.map((page) => {
+        return page;
+      })
+    }
   }
 
   render() {
@@ -256,7 +295,7 @@ class TestPerformance extends React.Component {
           <label>Enter Year of Passing</label>
           <select
             value={this.state.yop}
-            placeholder = "Enter Year of passing"
+            placeholder="Enter Year of passing"
             onChange={e => {
               this.setState({ yop: e.target.value });
             }
@@ -290,13 +329,13 @@ class TestPerformance extends React.Component {
               this.setState({ subj: e.target.value });
             }}
           >
-            <option value = ''>Select Subject</option>
+            <option value=''>Select Subject</option>
             <option value="all">All</option>
             {this.subjectDisplay()}
           </select>
           <br />
           <button className="ui button" onClick={() => {
-            this.enableMessage();
+            this.enableContents();
             this.getData();
           }
           }>
@@ -324,8 +363,16 @@ class TestPerformance extends React.Component {
               <tbody>{this.tableData()}</tbody>
             </table>
           </div>
+          <br />
+          <div className="ui pagination menu" style={{ float: "right" }}>
+            {/* <a class="active item">
+              1
+          </a> */}
+            {this.pageCount()}
+          </div>
+          <br />
+          <br />
         </div>
-        <br/>
       </div>
     );
   }
